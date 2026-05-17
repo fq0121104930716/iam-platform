@@ -46,18 +46,6 @@ spring:
           predicates:
             - Host=admin.iam.local,admin.iam.local:**
 
-        # BFF服务路由 - 基于路径
-        - id: bff-service-path
-          uri: lb://iam-bff-service
-          predicates:
-            - Path=/bff/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 100
-                redis-rate-limiter.burstCapacity: 200
-                redis-rate-limiter.requestedTokens: 1
-
       # 全局跨域配置
       globalcors:
         corsConfigurations:

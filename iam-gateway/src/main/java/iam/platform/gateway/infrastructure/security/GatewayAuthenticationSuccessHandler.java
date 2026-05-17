@@ -13,7 +13,7 @@ import java.net.URI;
 
 /**
  * Gateway OAuth2登录成功处理器
- * 登录成功后重定向到BFF页面或原始请求路径
+ * 登录成功后重定向到首页或原始请求路径
  */
 @Slf4j
 public class GatewayAuthenticationSuccessHandler implements ServerAuthenticationSuccessHandler {
@@ -28,24 +28,10 @@ public class GatewayAuthenticationSuccessHandler implements ServerAuthentication
             log.info("OAuth2 login successful for user: {}", name);
         }
 
-        // 检查是否有原始请求路径（saved request）
-        String redirectUrl = determineRedirectUrl(exchange.getExchange());
-
-        log.debug("Redirecting to: {}", redirectUrl);
+        // 登录成功后重定向到首页
         response.setStatusCode(org.springframework.http.HttpStatus.FOUND);
-        response.getHeaders().setLocation(URI.create(redirectUrl));
+        response.getHeaders().setLocation(URI.create("/"));
 
         return response.setComplete();
-    }
-
-    /**
-     * 确定重定向目标URL
-     * 优先使用原始请求路径，如果没有则返回BFF首页
-     */
-    private String determineRedirectUrl(ServerWebExchange exchange) {
-        // 尝试从session或cookie中获取原始请求路径
-        // Spring Security OAuth2通常会在认证前保存原始请求
-        // 这里简化处理，登录成功后重定向到BFF首页
-        return "/bff/";
     }
 }
