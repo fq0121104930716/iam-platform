@@ -144,6 +144,38 @@ services:
       - iam-network
     restart: unless-stopped
 
+  # IAM Audit Server - Centralized Audit Log Management
+  iam-audit-server:
+    build:
+      context: .
+      dockerfile: iam-audit-server/Dockerfile
+    container_name: iam-audit-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=sso_oidc
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=STPass123!
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=iam59!z$
+      - ROCKETMQ_NAMESRV=rocketmq-namesrv:9876
+      - ENCRYPTION_KEY=changeme-changeme-changeme-changeme!!
+    ports:
+      - "9003:9003"
+      - "9004:9004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rocketmq-namesrv:
+        condition: service_started
+      rocketmq-broker:
+        condition: service_started
+    networks:
+      - iam-network
+    restart: unless-stopped
+
 networks:
   iam-network:
     driver: bridge

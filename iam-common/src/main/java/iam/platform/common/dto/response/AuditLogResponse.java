@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AuditLogResponse {
     private Long id;
+    private String eventId;
+    private String sourceService;
     private Long tenantId;
     private Long personId;
     private String username;
@@ -26,5 +28,6 @@ public class AuditLogResponse {
     private String requestUri;
     private String result;
     private String errorMessage;
+    private String traceId;
     private LocalDateTime createdAt;
 }

@@ -1,0 +1,7 @@
+logging:
+  level:
+    iam.platform.audit: DEBUG
+    org.apache.rocketmq: DEBUG
+
+rocketmq:
+  name-server: localhost:9876

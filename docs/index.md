@@ -114,7 +114,7 @@
 
 ### 6. 项目管理
 
-- **[unfinished-features-checklist.md](unfinished-features-checklist.md)**
+- **[未完成特性清单.md](未完成特性清单.md)**
   - 未完成功能清单
   - 功能优先级
   - 适合：项目经理、开发者
@@ -189,7 +189,7 @@
 
 ### 我需要了解项目进度
 
-1. 查看 [unfinished-features-checklist.md](unfinished-features-checklist.md)
+1. 查看 [未完成特性清单.md](未完成特性清单.md)
 2. 了解已完成和待完成的功能
 3. 确定下一步开发计划
 
@@ -218,7 +218,7 @@
 ├── docs/
 │   ├── index.md                       # 本文档（文档索引）
 │   ├── TOKEN_VALIDATION_TEST.md       # Token测试指南（测试类）
-│   ├── unfinished-features-checklist.md # 功能清单（管理类）
+│   ├── 未完成特性清单.md               # 功能清单（管理类）
 │   ├── design/                        # 设计文档目录
 │   │   ├── 统一认证框架.md             # 架构设计
 │   │   ├── Spring Authorization Server 原理与流程.md # 认证原理

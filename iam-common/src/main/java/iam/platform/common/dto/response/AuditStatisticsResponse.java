@@ -1,5 +1,7 @@
 package iam.platform.common.dto.response;
 
+import iam.platform.common.model.enums.AuditResult;
+import iam.platform.common.model.enums.EventCategory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,8 +17,8 @@ import java.util.Map;
 @AllArgsConstructor
 public class AuditStatisticsResponse {
     private Long totalLogs;
-    private Map<String, Long> countByCategory;
-    private Map<String, Long> countByResult;
+    private Map<String, Long> byCategory;
+    private Map<String, Long> byResult;
     private List<TopEventType> topEventTypes;
     private LocalDateTime startDate;
     private LocalDateTime endDate;

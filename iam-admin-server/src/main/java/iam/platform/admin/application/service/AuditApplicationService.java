@@ -146,9 +146,9 @@ public class AuditApplicationService {
         long totalLogs = categoryCounts.values().stream().mapToLong(Long::longValue).sum();
 
         return AuditStatisticsResponse.builder().totalLogs(totalLogs)
-                .countByCategory(categoryCounts.entrySet().stream()
+                .byCategory(categoryCounts.entrySet().stream()
                         .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)))
-                .countByResult(resultCounts.entrySet().stream()
+                .byResult(resultCounts.entrySet().stream()
                         .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)))
                 .topEventTypes(topEventTypes.entrySet().stream()
                         .map(e -> AuditStatisticsResponse.TopEventType.builder()
