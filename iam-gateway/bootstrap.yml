@@ -1,0 +1,9 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:iam-platform-dev}
+        group: DEFAULT_GROUP
+        metadata:
+          management.context-path: /actuator

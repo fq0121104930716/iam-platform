@@ -1,0 +1,158 @@
+﻿# Dev 环境 Kubernetes Manifests 模板
+# 由 ci-build.ps1 脚本自动生成，IMAGE_TAG 会被替换为实际镜像标签
+# 不要手动修改此文件，应该编辑 dev-manifest-template.yaml
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: iam-platform-dev
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dev-iam-platform-config
+  namespace: iam-platform-dev
+data:
+  SPRING_PROFILES_ACTIVE: "dev"
+  DB_HOST: "localhost"
+  DB_PORT: "5432"
+  DB_NAME: "sso_oidc"
+  REDIS_HOST: "localhost"
+  REDIS_PORT: "6379"
+  OIDC_ISSUER_URI: "http://localhost:9000"
+  SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
+  SPRING_FLYWAY_BASELINE_VERSION: "1"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dev-iam-platform-secret
+  namespace: iam-platform-dev
+type: Opaque
+stringData:
+  DB_USERNAME: "dev_default"
+  DB_PASSWORD: "pwd123456"
+  REDIS_PASSWORD: "iam59!z$"
+  ENCRYPTION_KEY: "oLEwJBQg7EXXZijxJtoXYet4qcxODrqs"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dev-iam-platform-service
+  namespace: iam-platform-dev
+  labels:
+    app: dev-iam-platform-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: 9000
+      name: http
+    - port: 9001
+      targetPort: 9001
+      name: management
+  selector:
+    app: dev-iam-platform-service
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-iam-platform-service
+  namespace: iam-platform-dev
+  labels:
+    app: dev-iam-platform-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dev-iam-platform-service
+  template:
+    metadata:
+      labels:
+        app: dev-iam-platform-service
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      initContainers:
+        - name: discover-host-ip
+          image: IMAGE_TAG
+          imagePullPolicy: Always
+          command:
+            - /bin/sh
+            - -c
+            - |
+              HOST_IP=$(ip route show default | grep default | sed 's/.*via //;s/ .*//')
+              if [ -z "$HOST_IP" ]; then
+                echo "ERROR: Failed to discover host gateway IP"
+                exit 1
+              fi
+              echo "Discovered host gateway IP: ${HOST_IP}"
+              printf 'spring.datasource.url=jdbc:postgresql://%s:%s/%s\nspring.data.redis.host=%s\nsecurity.issuer-uri=http://%s:9000\n' \
+                "$HOST_IP" "${DB_PORT}" "${DB_NAME}" "$HOST_IP" "$HOST_IP" \
+                > /shared-config/application-host.properties
+              echo "Generated /shared-config/application-host.properties:"
+              cat /shared-config/application-host.properties
+          envFrom:
+            - configMapRef:
+                name: dev-iam-platform-config
+          volumeMounts:
+            - name: host-config-volume
+              mountPath: /shared-config
+      containers:
+        - name: iam-platform-service
+          image: IMAGE_TAG
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9000
+              name: http
+            - containerPort: 9001
+              name: management
+          envFrom:
+            - configMapRef:
+                name: dev-iam-platform-config
+            - secretRef:
+                name: dev-iam-platform-secret
+          env:
+            - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+              value: "file:/shared-config/application-host.properties"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 9001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 9001
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9001
+            failureThreshold: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: host-config-volume
+              mountPath: /shared-config
+              readOnly: true
+      volumes:
+        - name: host-config-volume
+          emptyDir:
+            sizeLimit: 1Mi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000

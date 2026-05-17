@@ -1,0 +1,21 @@
+logging:
+  level:
+    root: INFO
+    iam.platform.gateway: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: TRACE
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service-path
+          uri: lb://iam-auth-service
+          predicates:
+            - Path=/auth/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                redis-rate-limiter.requestedTokens: 1

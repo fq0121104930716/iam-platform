@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorize - SSO OIDC</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Authorization Request</h1>
+
+            <p><strong th:text="${clientName}">Application</strong> is requesting access to your account.</p>
+
+            <div class="scopes" th:if="${scopes}">
+                <h3>Requested Permissions:</h3>
+                <ul>
+                    <li th:each="scope : ${#strings.arraySplit(scopes, ',')}" th:text="${scope}">scope</li>
+                </ul>
+            </div>
+
+            <form th:action="@{/oauth2/authorize}" method="post">
+                <input type="hidden" name="client_id" th:value="${clientId}">
+                <div class="btn-group">
+                    <button type="submit" name="approve" value="true" class="btn btn-primary">Approve</button>
+                    <button type="submit" name="approve" value="false" class="btn btn-secondary">Deny</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

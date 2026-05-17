@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Tenant - SSO OIDC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .message {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .tenant-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .tenant-item {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .tenant-item:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .tenant-item input[type="radio"] {
+            display: none;
+        }
+
+        .tenant-item input[type="radio"]:checked+.tenant-content {
+            border-color: #667eea;
+        }
+
+        .tenant-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .tenant-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .tenant-info {
+            flex: 1;
+        }
+
+        .tenant-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .tenant-code {
+            font-size: 13px;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .tenant-employee {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .tenant-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #888;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Select Your Tenant</h1>
+        <p class="subtitle">Choose the tenant you want to work with. You can switch tenants later.</p>
+
+        <div th:if="${message}" class="message">
+            <span th:text="${message}"></span>
+        </div>
+
+        <div th:if="${param.error}" class="error">
+            Failed to select tenant. Please try again.
+        </div>
+
+        <form th:action="@{/select-tenant}" method="post" id="tenantForm">
+            <ul class="tenant-list" th:if="${tenants != null && !tenants.isEmpty()}">
+                <li th:each="tenant : ${tenants}" class="tenant-item">
+                    <input type="radio" th:id="${'tenant_' + tenant.tenantAccountId}" name="tenantAccountId"
+                        th:value="${tenant.tenantAccountId}" required />
+                    <label th:for="${'tenant_' + tenant.tenantAccountId}" class="tenant-content">
+                        <div class="tenant-icon">
+                            <span th:text="${#strings.substring(tenant.tenantName, 0, 1)}">T</span>
+                        </div>
+                        <div class="tenant-info">
+                            <div class="tenant-name" th:text="${tenant.tenantName}">Tenant Name</div>
+                            <div class="tenant-code" th:text="'Code: ' + ${tenant.tenantCode}">Code: tenant-code</div>
+                            <div class="tenant-employee" th:if="${tenant.employeeNo}"
+                                th:text="'Employee No: ' + ${tenant.employeeNo}">
+                                Employee No: EMP001
+                            </div>
+                        </div>
+                        <span class="tenant-status" th:text="${tenant.status}">ACTIVE</span>
+                    </label>
+                </li>
+            </ul>
+
+            <button type="submit" class="submit-btn" th:disabled="${tenants == null || tenants.isEmpty()}">
+                Continue
+            </button>
+        </form>
+
+        <div class="footer">
+            <p>SSO OIDC Authentication Service &copy; 2026</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-submit when radio button is clicked (optional UX improvement)
+        document.querySelectorAll('.tenant-item input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                // Optional: auto-submit after selection
+                // document.getElementById('tenantForm').submit();
+            });
+        });
+    </script>
+</body>
+
+</html>

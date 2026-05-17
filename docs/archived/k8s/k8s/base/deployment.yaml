@@ -1,0 +1,57 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iam-platform-service
+  labels:
+    app: iam-platform-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: iam-platform-service
+  template:
+    metadata:
+      labels:
+        app: iam-platform-service
+    spec:
+      containers:
+        - name: iam-platform-service
+          image: iam-platform-service:latest
+          ports:
+            - containerPort: 9000
+              name: http
+            - containerPort: 9001
+              name: management
+          envFrom:
+            - configMapRef:
+                name: iam-platform-config
+            - secretRef:
+                name: iam-platform-secret
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 9001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 9001
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9001
+            failureThreshold: 30
+            periodSeconds: 10
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000

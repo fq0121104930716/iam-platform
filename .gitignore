@@ -1,0 +1,111 @@
+# Compiled class files
+*.class
+
+# Log files
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Virtual machine crash logs
+hs_err_pid*
+replay_pid*
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Spring Boot
+spring-boot-devtools.properties
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# IDE - Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# IDE - VS Code
+.vscode/
+!.vscode/settings.json
+
+# IDE - NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Runtime
+*.pid
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Docker
+docker-compose.override.yml
+
+# Environment
+.env
+*.env.local
+
+# RSA keys (production keys must not be committed)
+src/main/resources/keys/*.pem
+
+# Qoder - 精细化提交策略（必须用通配符逐层打开，否则取反不生效）
+.qoder/*
+!.qoder/rules
+!.qoder/repowiki
+.qoder/repowiki/*
+!.qoder/repowiki/en
+!.qoder/repowiki/zh
+.qoder/repowiki/en/*
+!.qoder/repowiki/en/content
+.qoder/repowiki/zh/*
+!.qoder/repowiki/zh/content
+# 排除机器生成的索引元数据（频繁变更，污染git历史）
+.qoder/repowiki/*/meta/
+
+# Windows reserved device names
+nul
+con
+prn
+aux
+com[0-9]
+lpt[0-9]

@@ -1,0 +1,33 @@
+﻿spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  thymeleaf:
+    cache: false
+  security:
+    oauth2:
+      client:
+        registration:
+          dingtalk:
+            client-id: ${DINGTALK_CLIENT_ID:dev-dingtalk-client-id}
+            client-secret: ${DINGTALK_CLIENT_SECRET:dev-dingtalk-client-secret}
+
+verification-code:
+  sms:
+    enabled: false
+  email:
+    enabled: true
+    from: dev@iam-platform.com
+
+security:
+  encryption:
+    key: ${ENCRYPTION_KEY:oLEwJBQg7EXXZijxJtoXYet4qcxODrqs}
+
+logging:
+  level:
+    root: INFO
+    iam.platform.auth: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG

@@ -1,0 +1,95 @@
+server:
+  port: 9002
+
+spring:
+  application:
+    name: iam-admin-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:sso_oidc}
+    username: ${DB_USERNAME:dev_default}
+    password: ${DB_PASSWORD:pwd123456}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    open-in-view: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:iam59!z$}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    encoding: UTF-8
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+  session:
+    store-type: redis
+    redis:
+      namespace: sso-admin
+  security:
+    oauth2:
+      client:
+        registration:
+          sso:
+            client-id: ${ADMIN_CLIENT_ID:admin-server}
+            client-secret: ${ADMIN_CLIENT_SECRET:admin-server-secret}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid,profile
+            client-name: SSO Auth Server
+        provider:
+          sso:
+            issuer-uri: ${OIDC_ISSUER_URI:http://localhost:9000}
+
+security:
+  encryption:
+    key: ${ENCRYPTION_KEY:}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  server:
+    port: 9003
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://host.docker.internal:9411/api/v2/spans}
+  tracing:
+    sampling:
+      probability: 1.0
+
+# Audit log system configuration
+sso:
+  audit:
+    enabled: true
+    retention-days: 180
+    async:
+      core-pool-size: 2
+      max-pool-size: 5
+      queue-capacity: 500

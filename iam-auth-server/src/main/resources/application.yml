@@ -1,0 +1,124 @@
+﻿server:
+  port: 9000
+
+spring:
+  application:
+    name: iam-auth-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:sso_oidc}
+    username: ${DB_USERNAME:dev_default}
+    password: ${DB_PASSWORD:pwd123456}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    open-in-view: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:iam59!z$}
+  flyway:
+    enabled: false
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+  session:
+    store-type: redis
+    redis:
+      namespace: sso-auth
+  security:
+    oauth2:
+      client:
+        registration:
+          dingtalk:
+            client-id: ${DINGTALK_CLIENT_ID:}
+            client-secret: ${DINGTALK_CLIENT_SECRET:}
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid,profile
+            client-name: DingTalk
+        provider:
+          dingtalk:
+            authorization-uri: https://login.dingtalk.com/oauth2/auth
+            token-uri: https://api.dingtalk.com/v1.0/oauth2/userAccessToken
+            user-info-uri: https://api.dingtalk.com/v1.0/contact/users/me
+            user-name-attribute: unionId
+
+# Verification code login configuration
+verification-code:
+  sms:
+    enabled: ${SMS_ENABLED:false}
+    provider: ${SMS_PROVIDER:}
+  email:
+    enabled: ${EMAIL_ENABLED:true}
+    from: ${EMAIL_FROM:noreply@iam-platform.com}
+
+security:
+  jwk:
+    rsa:
+      private-key-location: ${JWK_RSA_PRIVATE_KEY:classpath:keys/private.pem}
+      public-key-location: ${JWK_RSA_PUBLIC_KEY:classpath:keys/public.pem}
+  encryption:
+    key: ${ENCRYPTION_KEY:}
+  issuer-uri: ${OIDC_ISSUER_URI:http://localhost:9000}
+
+# Security policy configuration
+sso:
+  security:
+    rate-limit:
+      enabled: true
+      max-attempts: 5
+      window-seconds: 300
+    account-lockout:
+      enabled: true
+      threshold: 10
+      lockout-duration-minutes: 30
+    ip-whitelist: []
+    ip-blacklist: []
+  
+  # LDAP configuration
+  ldap:
+    enabled: ${LDAP_ENABLED:false}
+    urls: ${LDAP_URLS:ldap://ad.example.com:389}
+    base-dn: ${LDAP_BASE_DN:DC=example,DC=com}
+    bind-dn: ${LDAP_BIND_DN:CN=sso-service,OU=ServiceAccounts,DC=example,DC=com}
+    bind-password: ${LDAP_BIND_PASSWORD:}
+    user-search-base: ${LDAP_USER_SEARCH_BASE:OU=Users}
+    user-search-filter: ${LDAP_USER_SEARCH_FILTER:(sAMAccountName={0})}
+    use-ssl: ${LDAP_USE_SSL:false}
+
+management:
+  server:
+    port: 9001
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://host.docker.internal:9411/api/v2/spans}
+  tracing:
+    sampling:
+      probability: 1.0

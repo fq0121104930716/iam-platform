@@ -1,0 +1,17 @@
+﻿apiVersion: v1
+kind: Service
+metadata:
+  name: iam-platform-service
+  labels:
+    app: iam-platform-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: 9000
+      name: http
+    - port: 9001
+      targetPort: 9001
+      name: management
+  selector:
+    app: iam-platform-service

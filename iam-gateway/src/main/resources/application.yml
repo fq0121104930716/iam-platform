@@ -1,0 +1,109 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: iam-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false  # 不自动创建路由，使用手动配置
+      routes:
+        # 认证服务路由 - 基于路径
+        - id: auth-service-path
+          uri: lb://iam-auth-service
+          predicates:
+            - Path=/auth/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                redis-rate-limiter.requestedTokens: 1
+
+        # 管理服务路由 - 基于路径
+        - id: admin-service-path
+          uri: lb://iam-admin-service
+          predicates:
+            - Path=/admin/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 50
+                redis-rate-limiter.burstCapacity: 100
+                redis-rate-limiter.requestedTokens: 1
+
+        # 认证服务路由 - 基于域名
+        - id: auth-service-domain
+          uri: lb://iam-auth-service
+          predicates:
+            - Host=auth.iam.local,auth.iam.local:**
+
+        # 管理服务路由 - 基于域名
+        - id: admin-service-domain
+          uri: lb://iam-admin-service
+          predicates:
+            - Host=admin.iam.local,admin.iam.local:**
+
+      # 全局跨域配置
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+  security:
+    oauth2:
+      client:
+        registration:
+          gateway-sso:
+            client-id: iam-gateway
+            client-secret: ${GATEWAY_CLIENT_SECRET:gateway-secret}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid,profile,email
+        provider:
+          gateway-sso:
+            issuer-uri: http://localhost:9000
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:iam59!z$}
+
+# OAuth2 Resource Server配置
+  security.oauth2.resourceserver.jwt.issuer-uri: http://localhost:9000
+
+management:
+  server:
+    port: 8081
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  level:
+    root: INFO
+    iam.platform.gateway: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: DEBUG
