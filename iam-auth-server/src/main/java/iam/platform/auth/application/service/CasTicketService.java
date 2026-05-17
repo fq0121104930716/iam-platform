@@ -39,9 +39,9 @@ public class CasTicketService {
 
         // Store ticket data in Redis with TTL
         String ticketData = String.format("%s|%s|%s|%s",
-                result.person().getUsername(),
-                result.person().getEmail() != null ? result.person().getEmail() : "",
-                result.person().getNickname() != null ? result.person().getNickname() : "",
+                result.user().getUsername(),
+                result.user().getEmail() != null ? result.user().getEmail() : "",
+                result.user().getNickname() != null ? result.user().getNickname() : "",
                 service);
 
         try {

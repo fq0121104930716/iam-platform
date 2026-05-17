@@ -25,7 +25,7 @@ public interface AuditLogRepository {
 
     Page<AuditLog> findByTenantId(Long tenantId, Pageable pageable);
 
-    Page<AuditLog> findByPersonId(Long personId, Pageable pageable);
+    Page<AuditLog> findByUserId(Long userId, Pageable pageable);
 
     Page<AuditLog> findByEventCategory(EventCategory category, Pageable pageable);
 

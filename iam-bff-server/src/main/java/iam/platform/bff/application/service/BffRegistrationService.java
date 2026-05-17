@@ -1,7 +1,7 @@
 package iam.platform.bff.application.service;
 
 import iam.platform.bff.infrastructure.client.AdminFeignClient;
-import iam.platform.common.dto.request.CreatePersonRequest;
+import iam.platform.common.dto.request.CreateUserRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,13 +18,13 @@ public class BffRegistrationService {
     private final AdminFeignClient adminFeignClient;
 
     /**
-     * Register a new person via admin service.
+     * Register a new User via admin service.
      */
-    public void registerPerson(CreatePersonRequest request) {
-        log.info("Registering new person: {}", request.getEmail());
-        ResponseEntity<Void> response = adminFeignClient.createPerson(request);
+    public void registerUser(CreateUserRequest request) {
+        log.info("Registering new User: {}", request.getEmail());
+        ResponseEntity<Void> response = adminFeignClient.createUser(request);
         if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new RuntimeException("Failed to create person: " + response.getStatusCode());
+            throw new RuntimeException("Failed to create User: " + response.getStatusCode());
         }
     }
 }

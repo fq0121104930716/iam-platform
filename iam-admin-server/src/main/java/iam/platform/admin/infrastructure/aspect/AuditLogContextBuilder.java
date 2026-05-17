@@ -16,6 +16,7 @@ import iam.platform.admin.infrastructure.security.TenantContext;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Builder for constructing AuditLogContext from the current request and method execution context.
@@ -49,12 +50,13 @@ public class AuditLogContextBuilder {
             }
         }
 
-        return AuditLogContext.builder().tenantId(TenantContext.getCurrentTenantId())
-                .personId(TenantContext.getCurrentPersonId()).username(getCurrentUsername())
+        return AuditLogContext.builder().eventId(UUID.randomUUID().toString())
+                .sourceService("iam-admin-service").tenantId(TenantContext.getCurrentTenantId())
+                .userId(TenantContext.getCurrentUserId()).username(getCurrentUsername())
                 .eventType(annotation.value()).resourceType(annotation.resourceType())
                 .action(resolveAction(annotation, paramMap)).ipAddress(getClientIp())
                 .userAgent(getUserAgent()).requestUri(getRequestUri()).requestParams(requestParams)
-                .result(AuditResult.SUCCESS).build();
+                .result(AuditResult.SUCCESS).traceId(extractTraceId()).build();
     }
 
     private String[] getParameterNames(ProceedingJoinPoint joinPoint) {
@@ -178,5 +180,28 @@ public class AuditLogContextBuilder {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String extractTraceId() {
+        HttpServletRequest request = getCurrentRequest();
+        if (request == null) {
+            return null;
+        }
+        // Try common tracing headers in order of preference
+        String traceId = request.getHeader("X-Trace-Id");
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = request.getHeader("X-B3-TraceId");
+        }
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = request.getHeader("traceparent");
+            // W3C Trace Context format: version-traceId-spanId-flags
+            if (traceId != null && traceId.contains("-")) {
+                String[] parts = traceId.split("-");
+                if (parts.length >= 2) {
+                    traceId = parts[1];
+                }
+            }
+        }
+        return traceId;
     }
 }

@@ -91,8 +91,8 @@ public class SamlAssertionBuilder {
                 notOnOrAfter, acsUrl,
                 notBefore, notOnOrAfter, acsUrl,
                 authnInstant, assertionId,
-                result.person().getEmail() != null ? result.person().getEmail() : "",
-                result.person().getNickname() != null ? result.person().getNickname() : ""
+                result.user().getEmail() != null ? result.user().getEmail() : "",
+                result.user().getNickname() != null ? result.user().getNickname() : ""
         );
 
         // Base64 encode the assertion
@@ -101,9 +101,9 @@ public class SamlAssertionBuilder {
 
     private String resolveNameId(AuthenticationResult result) {
         // Use email if available, otherwise use username
-        String nameId = result.person().getEmail();
+        String nameId = result.user().getEmail();
         if (nameId == null || nameId.isBlank()) {
-            nameId = result.person().getUsername();
+            nameId = result.user().getUsername();
         }
         return nameId;
     }

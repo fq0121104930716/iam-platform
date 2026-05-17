@@ -31,13 +31,13 @@ public class TenantAccountController {
 
     private final TenantAccountApplicationService tenantAccountApplicationService;
 
-    @PostMapping("/persons/{personId}/tenant-accounts")
+    @PostMapping("/users/{userId}/tenant-accounts")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create tenant account for person")
-    public ApiResponse<TenantAccountResponse> create(@PathVariable Long personId,
+    @Operation(summary = "Create tenant account for User")
+    public ApiResponse<TenantAccountResponse> create(@PathVariable Long userId,
             @Valid @RequestBody CreateTenantAccountRequest request) {
         return ApiResponse
-                .created(tenantAccountApplicationService.createTenantAccount(personId, request));
+                .created(tenantAccountApplicationService.createTenantAccount(userId, request));
     }
 
     @GetMapping("/tenant-accounts/{id}")
@@ -75,11 +75,11 @@ public class TenantAccountController {
         return ApiResponse.success(null);
     }
 
-    @GetMapping("/persons/{personId}/tenant-accounts")
-    @Operation(summary = "Get all tenant accounts for a person")
-    public ApiResponse<List<TenantAccountResponse>> getByPersonId(@PathVariable Long personId) {
+    @GetMapping("/users/{userId}/tenant-accounts")
+    @Operation(summary = "Get all tenant accounts for a User")
+    public ApiResponse<List<TenantAccountResponse>> getByUserId(@PathVariable Long userId) {
         return ApiResponse
-                .success(tenantAccountApplicationService.getTenantAccountsByPersonId(personId));
+                .success(tenantAccountApplicationService.getTenantAccountsByUserId(userId));
     }
 
     @GetMapping("/tenants/{tenantId}/tenant-accounts")

@@ -16,7 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 public class TenantAccount {
     private Long id;
-    private Long personId;
+    private Long userId;
     private Long tenantId;
     private String accountCode;
     private String employeeNo;
@@ -39,22 +39,15 @@ public class TenantAccount {
     /**
      * Create a new TenantAccount with ACTIVE status and default preferences.
      */
-    public static TenantAccount create(Long personId, Long tenantId,
-            String accountCode, String employeeNo) {
-        Guard.notNull(personId, "Person ID cannot be null");
+    public static TenantAccount create(Long userId, Long tenantId, String accountCode,
+            String employeeNo) {
+        Guard.notNull(userId, "User ID cannot be null");
         Guard.notNull(tenantId, "Tenant ID cannot be null");
         Guard.notBlank(accountCode, "Account code cannot be blank");
 
-        return TenantAccount.builder()
-                .personId(personId)
-                .tenantId(tenantId)
-                .accountCode(accountCode)
-                .employeeNo(employeeNo)
-                .status(AccountStatus.ACTIVE)
-                .joinedAt(LocalDateTime.now())
-                .preferredLanguage(DEFAULT_LANGUAGE)
-                .timezone(DEFAULT_TIMEZONE)
-                .build();
+        return TenantAccount.builder().userId(userId).tenantId(tenantId).accountCode(accountCode)
+                .employeeNo(employeeNo).status(AccountStatus.ACTIVE).joinedAt(LocalDateTime.now())
+                .preferredLanguage(DEFAULT_LANGUAGE).timezone(DEFAULT_TIMEZONE).build();
     }
 
     // ==================== State Machine ====================
@@ -63,8 +56,7 @@ public class TenantAccount {
      * Suspend this account. Only ACTIVE accounts can be suspended.
      */
     public void suspend() {
-        Guard.state(status == AccountStatus.ACTIVE,
-                "Only active accounts can be suspended.");
+        Guard.state(status == AccountStatus.ACTIVE, "Only active accounts can be suspended.");
         this.status = AccountStatus.SUSPENDED;
         this.updatedAt = LocalDateTime.now();
     }
@@ -83,8 +75,7 @@ public class TenantAccount {
      * Mark account as LEFT. This is irreversible.
      */
     public void leave() {
-        Guard.state(status != AccountStatus.LEFT,
-                "Account has already left.");
+        Guard.state(status != AccountStatus.LEFT, "Account has already left.");
         this.status = AccountStatus.LEFT;
         this.leftAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();

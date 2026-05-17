@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
  * JPA entity for audit log.
  */
 @Entity
-@Table(name = "t_audit_log",
-        indexes = {@Index(name = "idx_audit_tenant_id", columnList = "tenant_id"),
+@Table(name = "t_audit_log", indexes = {
+                @Index(name = "idx_audit_tenant_id", columnList = "tenant_id"),
                 @Index(name = "idx_audit_person_id", columnList = "person_id"),
                 @Index(name = "idx_audit_event_type", columnList = "event_type"),
                 @Index(name = "idx_audit_event_category", columnList = "event_category"),
@@ -24,62 +24,74 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_audit_result", columnList = "result"),
                 @Index(name = "idx_audit_created_at", columnList = "created_at"),
                 @Index(name = "idx_audit_tenant_category_time",
-                        columnList = "tenant_id, event_category, created_at"),})
+                                columnList = "tenant_id, event_category, created_at"),
+                @Index(name = "idx_audit_event_id", columnList = "event_id"),
+                @Index(name = "idx_audit_source_service", columnList = "source_service"),
+                @Index(name = "idx_audit_trace_id", columnList = "trace_id")})
 @Getter
 @Setter
 @NoArgsConstructor
 public class AuditLogPO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
 
-    @Column(name = "tenant_id")
-    private Long tenantId;
+        @Column(name = "event_id", length = 36)
+        private String eventId;
 
-    @Column(name = "person_id")
-    private Long personId;
+        @Column(name = "source_service", length = 50)
+        private String sourceService;
 
-    @Column(name = "username", length = 100)
-    private String username;
+        @Column(name = "tenant_id")
+        private Long tenantId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "event_type", nullable = false, length = 30)
-    private AuditEventType eventType;
+        @Column(name = "person_id")
+        private Long userId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "event_category", nullable = false, length = 20)
-    private EventCategory eventCategory;
+        @Column(name = "username", length = 100)
+        private String username;
 
-    @Column(name = "resource_id")
-    private Long resourceId;
+        @Enumerated(EnumType.STRING)
+        @Column(name = "event_type", nullable = false, length = 30)
+        private AuditEventType eventType;
 
-    @Column(name = "resource_type", length = 50)
-    private String resourceType;
+        @Enumerated(EnumType.STRING)
+        @Column(name = "event_category", nullable = false, length = 20)
+        private EventCategory eventCategory;
 
-    @Column(name = "action", length = 200)
-    private String action;
+        @Column(name = "resource_id")
+        private Long resourceId;
 
-    @Column(name = "ip_address", length = 45)
-    private String ipAddress;
+        @Column(name = "resource_type", length = 50)
+        private String resourceType;
 
-    @Column(name = "user_agent", length = 500)
-    private String userAgent;
+        @Column(name = "action", length = 200)
+        private String action;
 
-    @Column(name = "request_uri", length = 500)
-    private String requestUri;
+        @Column(name = "ip_address", length = 45)
+        private String ipAddress;
 
-    @Column(name = "request_params", columnDefinition = "TEXT")
-    private String requestParams;
+        @Column(name = "user_agent", length = 500)
+        private String userAgent;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "result", nullable = false, length = 10)
-    private AuditResult result;
+        @Column(name = "request_uri", length = 500)
+        private String requestUri;
 
-    @Column(name = "error_message", length = 2000)
-    private String errorMessage;
+        @Column(name = "request_params", columnDefinition = "TEXT")
+        private String requestParams;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+        @Enumerated(EnumType.STRING)
+        @Column(name = "result", nullable = false, length = 10)
+        private AuditResult result;
+
+        @Column(name = "error_message", length = 2000)
+        private String errorMessage;
+
+        @Column(name = "trace_id", length = 64)
+        private String traceId;
+
+        @CreationTimestamp
+        @Column(name = "created_at", nullable = false, updatable = false)
+        private LocalDateTime createdAt;
 }

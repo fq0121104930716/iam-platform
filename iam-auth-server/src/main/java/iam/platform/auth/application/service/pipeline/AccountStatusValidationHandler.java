@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import iam.platform.auth.domain.service.AccountStatusPolicy;
 
 /**
- * Pipeline handler: validates person and tenant account status before allowing authentication to
+ * Pipeline handler: validates User and tenant account status before allowing authentication to
  * proceed.
  */
 @Component
@@ -16,7 +16,7 @@ public class AccountStatusValidationHandler implements PostAuthHandler {
 
     @Override
     public void handle(PostAuthContext context) {
-        accountStatusPolicy.validatePersonStatus(context.getPerson());
+        accountStatusPolicy.validateUserStatus(context.getUser());
     }
 
     @Override

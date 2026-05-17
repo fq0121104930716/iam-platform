@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import iam.platform.auth.application.service.LdapUserLookupService;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
 import iam.platform.auth.domain.service.AuthenticationStrategy;
@@ -43,7 +43,7 @@ public class LdapAuthenticationStrategy implements AuthenticationStrategy {
     }
 
     @Override
-    public Person authenticate(AuthenticationCredentials credentials) {
+    public User authenticate(AuthenticationCredentials credentials) {
         if (!(credentials instanceof AuthenticationCredentials.LdapCredentials lc)) {
             throw new IllegalArgumentException("Unsupported credentials type");
         }
@@ -58,13 +58,13 @@ public class LdapAuthenticationStrategy implements AuthenticationStrategy {
             // 2. Attempt LDAP bind authentication
             authenticateWithLdap(userDn, lc.password());
 
-            // 3. Find or create Person in local database
-            Person person = userLookupService.findOrCreatePersonByLdap(lc.username(), lc.domain());
+            // 3. Find or create User in local database
+            User user = userLookupService.findOrCreateUserByLdap(lc.username(), lc.domain());
 
-            log.info("LDAP authentication successful: username={}, personId={}", lc.username(),
-                    person.getId());
+            log.info("LDAP authentication successful: username={}, userId={}", lc.username(),
+                    user.getId());
 
-            return person;
+            return user;
 
         } catch (BadCredentialsException e) {
             throw e;

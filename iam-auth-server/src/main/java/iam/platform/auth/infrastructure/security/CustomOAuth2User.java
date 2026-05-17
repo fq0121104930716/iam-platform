@@ -3,7 +3,7 @@ package iam.platform.auth.infrastructure.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 
 import java.util.Collection;
 import java.util.Map;
@@ -12,7 +12,7 @@ import java.util.Map;
 public class CustomOAuth2User implements OAuth2User {
 
     private final OAuth2User delegate;
-    private final Person person;
+    private final User user;
 
     @Override
     public Map<String, Object> getAttributes() {
@@ -26,10 +26,10 @@ public class CustomOAuth2User implements OAuth2User {
 
     @Override
     public String getName() {
-        return person.getUsername();
+        return user.getUsername();
     }
 
-    public Person getPerson() {
-        return person;
+    public User getUser() {
+        return user;
     }
 }

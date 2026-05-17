@@ -1,7 +1,7 @@
 package iam.platform.auth.domain.service.impl;
 
 import org.springframework.stereotype.Service;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.entity.TenantAccount;
 import iam.platform.auth.domain.service.AccountStatusPolicy;
 
@@ -9,11 +9,11 @@ import iam.platform.auth.domain.service.AccountStatusPolicy;
 public class AccountStatusPolicyImpl implements AccountStatusPolicy {
 
     @Override
-    public void validatePersonStatus(Person person) {
-        if (!person.isEnabled()) {
+    public void validateUserStatus(User user) {
+        if (!user.isEnabled()) {
             throw new IllegalStateException("Account is disabled");
         }
-        if (person.isAccountLocked()) {
+        if (user.isAccountLocked()) {
             throw new IllegalStateException("Account is locked");
         }
     }

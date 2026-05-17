@@ -56,10 +56,10 @@ public class TenantAwareAuthenticationFilter extends OncePerRequestFilter {
                 TenantContext.setCurrentTenantId((Long) tenantId);
                 TenantContext.setCurrentTenantAccountId((Long) tenantAccountId);
 
-                // Person ID is already stored in TenantContext during login pipeline
-                Long personId = TenantContext.getCurrentPersonId();
-                if (personId != null) {
-                    TenantContext.setCurrentPersonId(personId);
+                // User ID is already stored in TenantContext during login pipeline
+                Long userId = TenantContext.getCurrentUserId();
+                if (userId != null) {
+                    TenantContext.setCurrentUserId(userId);
                 }
             }
         }

@@ -59,8 +59,8 @@ public class AuditApplicationService {
 
         if (request.getTenantId() != null) {
             auditLogPage = auditLogRepository.findByTenantId(request.getTenantId(), pageRequest);
-        } else if (request.getPersonId() != null) {
-            auditLogPage = auditLogRepository.findByPersonId(request.getPersonId(), pageRequest);
+        } else if (request.getUserId() != null) {
+            auditLogPage = auditLogRepository.findByUserId(request.getUserId(), pageRequest);
         } else if (request.getEventType() != null) {
             auditLogPage = auditLogRepository.findByEventType(request.getEventType(), pageRequest);
         } else if (request.getEventCategory() != null) {
@@ -96,10 +96,10 @@ public class AuditApplicationService {
     /**
      * Query audit logs by user.
      */
-    public PageResponse<AuditLogResponse> getUserAuditLogs(Long personId, int page, int size) {
+    public PageResponse<AuditLogResponse> getUserAuditLogs(Long userId, int page, int size) {
         PageRequest pageRequest =
                 PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<AuditLog> auditLogPage = auditLogRepository.findByPersonId(personId, pageRequest);
+        Page<AuditLog> auditLogPage = auditLogRepository.findByUserId(userId, pageRequest);
 
         List<AuditLogResponse> responses =
                 auditLogPage.getContent().stream().map(auditLogAssembler::toResponse).toList();
@@ -174,7 +174,7 @@ public class AuditApplicationService {
             for (AuditLog log : allLogs) {
                 writer.printf("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s%n",
                         csvEscape(log.getId()), csvEscape(log.getTenantId()),
-                        csvEscape(log.getPersonId()), csvEscape(log.getUsername()),
+                        csvEscape(log.getUserId()), csvEscape(log.getUsername()),
                         csvEscape(log.getEventType()), csvEscape(log.getEventCategory()),
                         csvEscape(log.getResourceType()), csvEscape(log.getResourceId()),
                         csvEscape(log.getAction()), csvEscape(log.getIpAddress()),
@@ -194,9 +194,8 @@ public class AuditApplicationService {
         if (request.getTenantId() != null) {
             return auditLogRepository.findByTenantId(request.getTenantId(), pageRequest)
                     .getContent();
-        } else if (request.getPersonId() != null) {
-            return auditLogRepository.findByPersonId(request.getPersonId(), pageRequest)
-                    .getContent();
+        } else if (request.getUserId() != null) {
+            return auditLogRepository.findByUserId(request.getUserId(), pageRequest).getContent();
         } else if (request.getStartDate() != null && request.getEndDate() != null) {
             return auditLogRepository.findByCreatedAtBetween(request.getStartDate(),
                     request.getEndDate(), pageRequest).getContent();

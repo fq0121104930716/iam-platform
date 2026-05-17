@@ -14,8 +14,8 @@ import iam.platform.admin.domain.model.entity.Tenant;
 import iam.platform.common.model.enums.AuditEventType;
 import iam.platform.common.model.exception.ConflictException;
 import iam.platform.common.model.exception.TenantNotFoundException;
-import iam.platform.admin.domain.repository.TenantAccountRepository;
 import iam.platform.admin.domain.repository.TenantRepository;
+import iam.platform.admin.domain.repository.UserTenantMappingRepository;
 import iam.platform.common.api.PageResponse;
 
 @Slf4j
@@ -24,22 +24,19 @@ import iam.platform.common.api.PageResponse;
 public class TenantApplicationService {
 
     private final TenantRepository tenantRepository;
-    private final TenantAccountRepository tenantAccountRepository;
+    private final UserTenantMappingRepository userTenantMappingRepository;
 
     @Transactional
-    @AuditLog(value = AuditEventType.TENANT_CREATED, resourceType = "tenant", action = "创建租户 #{#request.tenantName}")
+    @AuditLog(value = AuditEventType.TENANT_CREATED, resourceType = "tenant",
+            action = "创建租户 #{#request.tenantName}")
     public TenantResponse createTenant(CreateTenantRequest request) {
         if (tenantRepository.existsByTenantCode(request.getTenantCode())) {
             throw new ConflictException("Tenant code already exists: " + request.getTenantCode());
         }
 
         // Domain factory method handles construction with defaults
-        Tenant tenant = Tenant.create(
-                request.getTenantCode(),
-                request.getTenantName(),
-                request.getMaxUsers(),
-                request.getExpiresAt(),
-                request.getContactEmail(),
+        Tenant tenant = Tenant.create(request.getTenantCode(), request.getTenantName(),
+                request.getMaxUsers(), request.getExpiresAt(), request.getContactEmail(),
                 request.getContactPhone());
 
         tenant = tenantRepository.save(tenant);
@@ -54,18 +51,15 @@ public class TenantApplicationService {
     }
 
     @Transactional
-    @AuditLog(value = AuditEventType.TENANT_UPDATED, resourceType = "tenant", action = "更新租户 ID=#{#id}")
+    @AuditLog(value = AuditEventType.TENANT_UPDATED, resourceType = "tenant",
+            action = "更新租户 ID=#{#id}")
     public TenantResponse updateTenant(Long id, UpdateTenantRequest request) {
         Tenant tenant = tenantRepository.findById(id)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + id));
 
         // Delegate to domain behavior method
-        tenant.updateInfo(
-                request.getTenantName(),
-                request.getMaxUsers(),
-                request.getContactEmail(),
-                request.getContactPhone(),
-                request.getExpiresAt());
+        tenant.updateInfo(request.getTenantName(), request.getMaxUsers(), request.getContactEmail(),
+                request.getContactPhone(), request.getExpiresAt());
 
         tenant = tenantRepository.save(tenant);
         log.info("Tenant updated: {}", tenant.getTenantCode());
@@ -73,7 +67,8 @@ public class TenantApplicationService {
     }
 
     @Transactional
-    @AuditLog(value = AuditEventType.TENANT_DELETED, resourceType = "tenant", action = "删除租户 ID=#{#id}")
+    @AuditLog(value = AuditEventType.TENANT_DELETED, resourceType = "tenant",
+            action = "删除租户 ID=#{#id}")
     public void deleteTenant(Long id) {
         Tenant tenant = tenantRepository.findById(id)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + id));
@@ -85,7 +80,8 @@ public class TenantApplicationService {
     }
 
     @Transactional
-    @AuditLog(value = AuditEventType.TENANT_ACTIVATED, resourceType = "tenant", action = "激活租户 ID=#{#id}")
+    @AuditLog(value = AuditEventType.TENANT_ACTIVATED, resourceType = "tenant",
+            action = "激活租户 ID=#{#id}")
     public void activateTenant(Long id) {
         Tenant tenant = tenantRepository.findById(id)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + id));
@@ -97,7 +93,8 @@ public class TenantApplicationService {
     }
 
     @Transactional
-    @AuditLog(value = AuditEventType.TENANT_SUSPENDED, resourceType = "tenant", action = "暂停租户 ID=#{#id}")
+    @AuditLog(value = AuditEventType.TENANT_SUSPENDED, resourceType = "tenant",
+            action = "暂停租户 ID=#{#id}")
     public void suspendTenant(Long id) {
         Tenant tenant = tenantRepository.findById(id)
                 .orElseThrow(() -> new TenantNotFoundException("Tenant not found: " + id));
@@ -115,8 +112,10 @@ public class TenantApplicationService {
     }
 
     private TenantResponse toResponse(Tenant tenant) {
-        long userCount = tenantAccountRepository.countByTenantIdAndStatus(tenant.getId(), "ACTIVE")
-                + tenantAccountRepository.countByTenantIdAndStatus(tenant.getId(), "SUSPENDED");
+        // Use UserTenantMapping instead of deprecated TenantAccount
+        long userCount = userTenantMappingRepository.countByTenantIdAndStatus(tenant.getId(),
+                "ACTIVE")
+                + userTenantMappingRepository.countByTenantIdAndStatus(tenant.getId(), "SUSPENDED");
 
         return TenantResponse.builder().id(tenant.getId()).tenantCode(tenant.getTenantCode())
                 .tenantName(tenant.getTenantName())

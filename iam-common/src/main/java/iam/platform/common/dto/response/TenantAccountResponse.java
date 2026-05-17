@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TenantAccountResponse {
     private Long id;
-    private Long personId;
+    private Long userId;
     private Long tenantId;
     private String tenantCode;
     private String tenantName;

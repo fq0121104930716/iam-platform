@@ -2,8 +2,8 @@ package iam.platform.auth.application.service.pipeline;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import iam.platform.auth.domain.model.entity.Person;
-import iam.platform.auth.domain.repository.PersonRepository;
+import iam.platform.auth.domain.model.entity.User;
+import iam.platform.auth.domain.repository.UserRepository;
 
 /**
  * Pipeline handler: records the successful login timestamp.
@@ -12,13 +12,13 @@ import iam.platform.auth.domain.repository.PersonRepository;
 @RequiredArgsConstructor
 public class LoginRecordHandler implements PostAuthHandler {
 
-    private final PersonRepository personRepository;
+    private final UserRepository UserRepository;
 
     @Override
     public void handle(PostAuthContext context) {
-        Person person = context.getPerson();
-        person.recordLogin();
-        personRepository.save(person);
+        User user = context.getUser();
+        user.recordLogin();
+        UserRepository.save(user);
     }
 
     @Override

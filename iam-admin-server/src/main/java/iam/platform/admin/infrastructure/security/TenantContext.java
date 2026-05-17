@@ -1,23 +1,23 @@
 package iam.platform.admin.infrastructure.security;
 
 /**
- * Thread-local storage for current tenant context. Stores the authenticated person's ID, current
+ * Thread-local storage for current tenant context. Stores the authenticated User's ID, current
  * tenant ID, and current tenant account ID for the request lifecycle.
  */
 public final class TenantContext {
 
-    private static final ThreadLocal<Long> CURRENT_PERSON_ID = new ThreadLocal<>();
+    private static final ThreadLocal<Long> CURRENT_USER_ID = new ThreadLocal<>();
     private static final ThreadLocal<Long> CURRENT_TENANT_ID = new ThreadLocal<>();
     private static final ThreadLocal<Long> CURRENT_TENANT_ACCOUNT_ID = new ThreadLocal<>();
 
     private TenantContext() {}
 
-    public static Long getCurrentPersonId() {
-        return CURRENT_PERSON_ID.get();
+    public static Long getCurrentUserId() {
+        return CURRENT_USER_ID.get();
     }
 
-    public static void setCurrentPersonId(Long personId) {
-        CURRENT_PERSON_ID.set(personId);
+    public static void setCurrentUserId(Long userId) {
+        CURRENT_USER_ID.set(userId);
     }
 
     public static Long getCurrentTenantId() {
@@ -37,7 +37,7 @@ public final class TenantContext {
     }
 
     public static void clear() {
-        CURRENT_PERSON_ID.remove();
+        CURRENT_USER_ID.remove();
         CURRENT_TENANT_ID.remove();
         CURRENT_TENANT_ACCOUNT_ID.remove();
     }

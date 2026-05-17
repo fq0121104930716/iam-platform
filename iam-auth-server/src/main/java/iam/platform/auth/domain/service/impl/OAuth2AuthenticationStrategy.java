@@ -2,7 +2,7 @@ package iam.platform.auth.domain.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
 import iam.platform.auth.domain.service.AuthenticationStrategy;
@@ -28,12 +28,12 @@ public class OAuth2AuthenticationStrategy implements AuthenticationStrategy {
     }
 
     @Override
-    public Person authenticate(AuthenticationCredentials credentials) {
+    public User authenticate(AuthenticationCredentials credentials) {
         // OAuth2 credentials have already been validated by the provider.
-        // The Person was resolved by CustomOAuth2UserService before reaching here.
+        // The User was resolved by CustomOAuth2UserService before reaching here.
         AuthenticationCredentials.OAuth2Credentials oc =
                 (AuthenticationCredentials.OAuth2Credentials) credentials;
-        return oc.resolvedPerson();
+        return oc.resolvedUser();
     }
 
     @Override

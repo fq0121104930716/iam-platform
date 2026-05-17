@@ -52,8 +52,8 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
     }
 
     @Override
-    public Page<AuditLog> findByPersonId(Long personId, Pageable pageable) {
-        return jpaRepository.findByPersonId(personId, pageable).map(converter::toDomain);
+    public Page<AuditLog> findByUserId(Long userId, Pageable pageable) {
+        return jpaRepository.findByUserId(userId, pageable).map(converter::toDomain);
     }
 
     @Override

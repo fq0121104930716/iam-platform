@@ -45,7 +45,7 @@ public class AuditLogPO {
     private Long tenantId;
 
     @Column(name = "person_id")
-    private Long personId;
+    private Long userId;
 
     @Column(length = 100)
     private String username;

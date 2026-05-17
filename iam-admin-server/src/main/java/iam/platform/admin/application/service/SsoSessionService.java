@@ -6,10 +6,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import iam.platform.admin.domain.model.entity.Person;
+import iam.platform.admin.domain.model.entity.User;
 import iam.platform.admin.domain.model.entity.Tenant;
 import iam.platform.admin.domain.model.entity.TenantAccount;
-import iam.platform.admin.domain.repository.PersonRepository;
+import iam.platform.admin.domain.repository.UserRepository;
 import iam.platform.admin.domain.repository.TenantAccountRepository;
 import iam.platform.admin.domain.repository.TenantRepository;
 import iam.platform.admin.infrastructure.security.TenantContext;
@@ -28,7 +28,7 @@ public class SsoSessionService {
 
     private final TenantRepository tenantRepository;
     private final TenantAccountRepository tenantAccountRepository;
-    private final PersonRepository personRepository;
+    private final UserRepository UserRepository;
     private final TenantAccountRoleApplicationService tenantAccountRoleService;
 
     /**
@@ -40,12 +40,12 @@ public class SsoSessionService {
             throw new IllegalStateException("User not authenticated");
         }
 
-        Long personId = extractPersonId(auth);
-        if (personId == null) {
-            throw new IllegalStateException("Cannot determine person ID");
+        Long userId = extractUserId(auth);
+        if (userId == null) {
+            throw new IllegalStateException("Cannot determine User ID");
         }
 
-        List<TenantAccount> tenantAccounts = tenantAccountRepository.findByPersonId(personId);
+        List<TenantAccount> tenantAccounts = tenantAccountRepository.findByUserId(userId);
 
         return tenantAccounts.stream().filter(TenantAccount::isActive).map(this::toResponse)
                 .collect(Collectors.toList());
@@ -60,15 +60,15 @@ public class SsoSessionService {
             throw new IllegalStateException("User not authenticated");
         }
 
-        Long personId = extractPersonId(auth);
-        if (personId == null) {
-            throw new IllegalStateException("Cannot determine person ID");
+        Long userId = extractUserId(auth);
+        if (userId == null) {
+            throw new IllegalStateException("Cannot determine User ID");
         }
 
         TenantAccount tenantAccount = tenantAccountRepository.findById(tenantAccountId).orElseThrow(
                 () -> new IllegalArgumentException("Tenant account not found: " + tenantAccountId));
 
-        if (!tenantAccount.getPersonId().equals(personId)) {
+        if (!tenantAccount.getUserId().equals(userId)) {
             throw new IllegalArgumentException("Tenant account does not belong to current user");
         }
 
@@ -88,7 +88,7 @@ public class SsoSessionService {
                         .map(p -> p.getPermissionCode()).collect(Collectors.toSet());
 
         // Update tenant context via ThreadLocal
-        TenantContext.setCurrentPersonId(personId);
+        TenantContext.setCurrentUserId(userId);
         TenantContext.setCurrentTenantId(tenant.getId());
         TenantContext.setCurrentTenantAccountId(tenantAccountId);
 
@@ -104,25 +104,25 @@ public class SsoSessionService {
         TenantContext.setCurrentTenantAccountId(null);
     }
 
-    private Long extractPersonId(Authentication auth) {
+    private Long extractUserId(Authentication auth) {
         // Try to get from OAuth2 session claims
         if (auth instanceof OAuth2AuthenticationToken oauthToken) {
             OAuth2User user = oauthToken.getPrincipal();
-            Object personIdAttr = user.getAttribute("person_id");
-            if (personIdAttr instanceof Number number) {
+            Object userIdAttr = user.getAttribute("user_id");
+            if (userIdAttr instanceof Number number) {
                 return number.longValue();
             }
         }
 
         // Try TenantContext
-        Long contextPersonId = TenantContext.getCurrentPersonId();
-        if (contextPersonId != null) {
-            return contextPersonId;
+        Long contextUserId = TenantContext.getCurrentUserId();
+        if (contextUserId != null) {
+            return contextUserId;
         }
 
         // Fallback: lookup by username
         String username = auth.getName();
-        return personRepository.findByUsername(username).map(Person::getId).orElse(null);
+        return UserRepository.findByUsername(username).map(User::getId).orElse(null);
     }
 
     private TenantAccountResponse toResponse(TenantAccount account) {

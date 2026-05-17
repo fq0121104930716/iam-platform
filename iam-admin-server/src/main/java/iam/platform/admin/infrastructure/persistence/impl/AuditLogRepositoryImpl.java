@@ -54,8 +54,8 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
     }
 
     @Override
-    public Page<AuditLog> findByPersonId(Long personId, Pageable pageable) {
-        return jpaRepository.findByPersonId(personId, pageable).map(this::toDomain);
+    public Page<AuditLog> findByUserId(Long userId, Pageable pageable) {
+        return jpaRepository.findByUserId(userId, pageable).map(this::toDomain);
     }
 
     @Override
@@ -120,8 +120,10 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
     private AuditLogPO toPO(AuditLog domain) {
         AuditLogPO po = new AuditLogPO();
         po.setId(domain.getId());
+        po.setEventId(domain.getEventId());
+        po.setSourceService(domain.getSourceService());
         po.setTenantId(domain.getTenantId());
-        po.setPersonId(domain.getPersonId());
+        po.setUserId(domain.getUserId());
         po.setUsername(domain.getUsername());
         po.setEventType(domain.getEventType());
         po.setEventCategory(domain.getEventCategory());
@@ -134,18 +136,20 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
         po.setRequestParams(domain.getRequestParams());
         po.setResult(domain.getResult());
         po.setErrorMessage(domain.getErrorMessage());
+        po.setTraceId(domain.getTraceId());
         po.setCreatedAt(domain.getCreatedAt());
         return po;
     }
 
     private AuditLog toDomain(AuditLogPO po) {
-        return AuditLog.builder().id(po.getId()).tenantId(po.getTenantId())
-                .personId(po.getPersonId()).username(po.getUsername()).eventType(po.getEventType())
+        return AuditLog.builder().id(po.getId()).eventId(po.getEventId())
+                .sourceService(po.getSourceService()).tenantId(po.getTenantId())
+                .userId(po.getUserId()).username(po.getUsername()).eventType(po.getEventType())
                 .eventCategory(po.getEventCategory()).resourceId(po.getResourceId())
                 .resourceType(po.getResourceType()).action(po.getAction())
                 .ipAddress(po.getIpAddress()).userAgent(po.getUserAgent())
                 .requestUri(po.getRequestUri()).requestParams(po.getRequestParams())
-                .result(po.getResult()).errorMessage(po.getErrorMessage())
+                .result(po.getResult()).errorMessage(po.getErrorMessage()).traceId(po.getTraceId())
                 .createdAt(po.getCreatedAt()).build();
     }
 }

@@ -1,7 +1,7 @@
 package iam.platform.bff.interfaces.web;
 
 import iam.platform.bff.application.service.BffRegistrationService;
-import iam.platform.common.dto.request.CreatePersonRequest;
+import iam.platform.common.dto.request.CreateUserRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,19 +20,19 @@ public class BffRegistrationController {
 
     @GetMapping("/register")
     public String register(Model model) {
-        model.addAttribute("personRequest", new CreatePersonRequest());
+        model.addAttribute("userRequest", new CreateUserRequest());
         return "register";
     }
 
     @PostMapping("/register")
-    public String processRegistration(@ModelAttribute @Validated CreatePersonRequest request,
+    public String processRegistration(@ModelAttribute @Validated CreateUserRequest request,
             Model model) {
         try {
-            registrationService.registerPerson(request);
+            registrationService.registerUser(request);
             return "redirect:/bff/login?registered";
         } catch (Exception e) {
             model.addAttribute("error", "Registration failed: " + e.getMessage());
-            model.addAttribute("personRequest", request);
+            model.addAttribute("userRequest", request);
             return "register";
         }
     }

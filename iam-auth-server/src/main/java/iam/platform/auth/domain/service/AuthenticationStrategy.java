@@ -1,6 +1,6 @@
 package iam.platform.auth.domain.service;
 
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
 
@@ -21,14 +21,14 @@ public interface AuthenticationStrategy {
     boolean supports(AuthenticationCredentials credentials);
 
     /**
-     * Validate credentials and return the resolved Person.
+     * Validate credentials and return the resolved User.
      * 
      * @throws org.springframework.security.authentication.BadCredentialsException if validation
      *         fails
      * @throws iam.platform.common.model.exception.InvalidStateException if account state prevents
      *         authentication
      */
-    Person authenticate(AuthenticationCredentials credentials);
+    User authenticate(AuthenticationCredentials credentials);
 
     /**
      * Returns true if this method involves external redirects (OAuth2 providers). First-party

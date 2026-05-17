@@ -15,8 +15,10 @@ import iam.platform.common.model.enums.AuditResult;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuditLogContext {
+    private String eventId;
+    private String sourceService;
     private Long tenantId;
-    private Long personId;
+    private Long userId;
     private String username;
     private AuditEventType eventType;
     private String resourceType;
@@ -28,4 +30,5 @@ public class AuditLogContext {
     private String requestParams;
     private AuditResult result;
     private String errorMessage;
+    private String traceId;
 }

@@ -23,7 +23,7 @@ public interface AuditLogJpaRepository extends JpaRepository<AuditLogPO, Long>, 
 
     Page<AuditLogPO> findByTenantId(Long tenantId, Pageable pageable);
 
-    Page<AuditLogPO> findByPersonId(Long personId, Pageable pageable);
+    Page<AuditLogPO> findByUserId(Long userId, Pageable pageable);
 
     Page<AuditLogPO> findByEventCategory(String eventCategory, Pageable pageable);
 

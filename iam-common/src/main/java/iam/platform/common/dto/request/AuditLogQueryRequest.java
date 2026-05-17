@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AuditLogQueryRequest {
     private Long tenantId;
-    private Long personId;
+    private Long userId;
     private String username;
     private EventCategory eventCategory;
     private AuditEventType eventType;

@@ -16,6 +16,32 @@ spring:
         locator:
           enabled: false  # 不自动创建路由，使用手动配置
       routes:
+        # BFF服务路由 - 优先匹配
+        - id: bff-service
+          uri: lb://iam-bff-service
+          predicates:
+            - Path=/bff/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 100
+                redis-rate-limiter.burstCapacity: 200
+                redis-rate-limiter.requestedTokens: 1
+
+        # 前端静态资源路由 - admin-ui
+        - id: admin-ui-static
+          uri: lb://iam-bff-service
+          predicates:
+            - Path=/admin-ui/**
+          filters:
+            - StripPrefix=0
+
+        # 根路径重定向到admin-ui
+        - id: admin-ui-index
+          uri: lb://iam-bff-service
+          predicates:
+            - Path=/
+
         # 认证服务路由 - 基于路径
         - id: auth-service-path
           uri: lb://iam-auth-service

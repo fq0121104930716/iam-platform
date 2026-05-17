@@ -13,8 +13,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
- * Audit log domain entity. Represents an immutable audit event.
- * Once created, audit logs should never be modified.
+ * Audit log domain entity. Represents an immutable audit event. Once created, audit logs should
+ * never be modified.
  */
 @Getter
 @Builder
@@ -22,8 +22,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AuditLog {
     private Long id;
+    private String eventId;
+    private String sourceService;
     private Long tenantId;
-    private Long personId;
+    private Long userId;
     private String username;
     private AuditEventType eventType;
     private EventCategory eventCategory;
@@ -36,6 +38,7 @@ public class AuditLog {
     private String requestParams;
     private AuditResult result;
     private String errorMessage;
+    private String traceId;
     private LocalDateTime createdAt;
 
     // ==================== Factory Methods ====================
@@ -43,59 +46,43 @@ public class AuditLog {
     /**
      * Create an audit log from context (used by AOP aspect).
      */
-    public static AuditLog fromContext(iam.platform.admin.infrastructure.aspect.AuditLogContext context) {
+    public static AuditLog fromContext(
+            iam.platform.admin.infrastructure.aspect.AuditLogContext context) {
         Guard.notNull(context.getEventType(), "Event type cannot be null");
         Guard.notNull(context.getResult(), "Audit result cannot be null");
 
         LocalDateTime now = LocalDateTime.now();
         EventCategory category = context.getEventType().getCategory();
 
-        return AuditLog.builder()
-                .tenantId(context.getTenantId())
-                .personId(context.getPersonId())
-                .username(context.getUsername())
-                .eventType(context.getEventType())
-                .eventCategory(category)
-                .resourceId(context.getResourceId())
-                .resourceType(context.getResourceType())
-                .action(context.getAction())
-                .ipAddress(context.getIpAddress())
-                .userAgent(context.getUserAgent())
-                .requestUri(context.getRequestUri())
-                .requestParams(context.getRequestParams())
-                .result(context.getResult())
-                .errorMessage(context.getErrorMessage())
-                .createdAt(now)
-                .build();
+        return AuditLog.builder().eventId(context.getEventId())
+                .sourceService(context.getSourceService()).tenantId(context.getTenantId())
+                .userId(context.getUserId()).username(context.getUsername())
+                .eventType(context.getEventType()).eventCategory(category)
+                .resourceId(context.getResourceId()).resourceType(context.getResourceType())
+                .action(context.getAction()).ipAddress(context.getIpAddress())
+                .userAgent(context.getUserAgent()).requestUri(context.getRequestUri())
+                .requestParams(context.getRequestParams()).result(context.getResult())
+                .errorMessage(context.getErrorMessage()).traceId(context.getTraceId())
+                .createdAt(now).build();
     }
 
     /**
      * Create an audit log directly (for manual logging).
      */
-    public static AuditLog create(Long tenantId, Long personId, String username,
-            AuditEventType eventType, EventCategory eventCategory, Long resourceId,
+    public static AuditLog create(String eventId, String sourceService, Long tenantId, Long userId,
+            String username, AuditEventType eventType, EventCategory eventCategory, Long resourceId,
             String resourceType, String action, String ipAddress, String userAgent,
-            String requestUri, String requestParams, AuditResult result, String errorMessage) {
+            String requestUri, String requestParams, AuditResult result, String errorMessage,
+            String traceId) {
         Guard.notNull(eventType, "Event type cannot be null");
         Guard.notNull(result, "Audit result cannot be null");
 
-        return AuditLog.builder()
-                .tenantId(tenantId)
-                .personId(personId)
-                .username(username)
-                .eventType(eventType)
-                .eventCategory(eventCategory)
-                .resourceId(resourceId)
-                .resourceType(resourceType)
-                .action(action)
-                .ipAddress(ipAddress)
-                .userAgent(userAgent)
-                .requestUri(requestUri)
-                .requestParams(requestParams)
-                .result(result)
-                .errorMessage(errorMessage)
-                .createdAt(LocalDateTime.now())
-                .build();
+        return AuditLog.builder().eventId(eventId).sourceService(sourceService).tenantId(tenantId)
+                .userId(userId).username(username).eventType(eventType).eventCategory(eventCategory)
+                .resourceId(resourceId).resourceType(resourceType).action(action)
+                .ipAddress(ipAddress).userAgent(userAgent).requestUri(requestUri)
+                .requestParams(requestParams).result(result).errorMessage(errorMessage)
+                .traceId(traceId).createdAt(LocalDateTime.now()).build();
     }
 
     // ==================== Query Methods ====================

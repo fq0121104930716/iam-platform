@@ -3,7 +3,7 @@ package iam.platform.auth.domain.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
 import iam.platform.auth.domain.service.AuthenticationStrategy;
@@ -26,7 +26,7 @@ public class EmailCodeAuthenticationStrategy implements AuthenticationStrategy {
     }
 
     @Override
-    public Person authenticate(AuthenticationCredentials credentials) {
+    public User authenticate(AuthenticationCredentials credentials) {
         AuthenticationCredentials.EmailCodeCredentials ec =
                 (AuthenticationCredentials.EmailCodeCredentials) credentials;
 
@@ -34,6 +34,6 @@ public class EmailCodeAuthenticationStrategy implements AuthenticationStrategy {
             throw new BadCredentialsException("Invalid or expired email verification code");
         }
 
-        return verificationCodeService.findOrCreatePersonByEmail(ec.email());
+        return verificationCodeService.findOrCreateUserByEmail(ec.email());
     }
 }

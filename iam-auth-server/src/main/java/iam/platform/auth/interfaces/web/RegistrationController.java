@@ -8,7 +8,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import iam.platform.common.dto.request.CreatePersonRequest;
+import iam.platform.common.dto.request.CreateUserRequest;
 import iam.platform.auth.interfaces.client.AdminServiceClient;
 import iam.platform.common.model.exception.ConflictException;
 
@@ -20,19 +20,19 @@ public class RegistrationController {
 
     @GetMapping("/register")
     public String register(Model model) {
-        model.addAttribute("user", CreatePersonRequest.builder().build());
+        model.addAttribute("user", CreateUserRequest.builder().build());
         return "register";
     }
 
     @PostMapping("/register")
-    public String processRegistration(@Valid @ModelAttribute("user") CreatePersonRequest request,
+    public String processRegistration(@Valid @ModelAttribute("user") CreateUserRequest request,
             BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
             return "register";
         }
 
         try {
-            adminServiceClient.createPerson(request);
+            adminServiceClient.createUser(request);
             return "redirect:/login?registered";
         } catch (ConflictException e) {
             model.addAttribute("error", e.getMessage());

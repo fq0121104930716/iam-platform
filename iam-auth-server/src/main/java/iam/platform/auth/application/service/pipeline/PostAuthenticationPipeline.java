@@ -3,7 +3,7 @@ package iam.platform.auth.application.service.pipeline;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
 
@@ -19,9 +19,9 @@ public class PostAuthenticationPipeline {
 
     private final List<PostAuthHandler> handlers;
 
-    public AuthenticationResult execute(Person person, AuthenticationMethod method,
+    public AuthenticationResult execute(User user, AuthenticationMethod method,
             HttpServletRequest request) {
-        PostAuthContext ctx = new PostAuthContext(person, method, request);
+        PostAuthContext ctx = new PostAuthContext(user, method, request);
         for (PostAuthHandler handler : handlers) {
             handler.handle(ctx);
         }

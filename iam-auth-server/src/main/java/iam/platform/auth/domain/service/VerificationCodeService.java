@@ -1,6 +1,6 @@
 package iam.platform.auth.domain.service;
 
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 
 public interface VerificationCodeService {
     // 生成并发送验证码
@@ -14,7 +14,7 @@ public interface VerificationCodeService {
     boolean verifyEmailCode(String email, String code);
 
     // 查找或创建用户
-    Person findOrCreatePersonByPhone(String phone);
+    User findOrCreateUserByPhone(String phone);
 
-    Person findOrCreatePersonByEmail(String email);
+    User findOrCreateUserByEmail(String email);
 }

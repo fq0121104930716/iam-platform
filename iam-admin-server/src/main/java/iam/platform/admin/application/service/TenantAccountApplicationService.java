@@ -14,8 +14,8 @@ import iam.platform.admin.domain.model.entity.TenantAccount;
 import iam.platform.common.model.exception.ConflictException;
 import iam.platform.common.model.exception.TenantAccountNotFoundException;
 import iam.platform.common.model.exception.TenantNotFoundException;
-import iam.platform.common.model.exception.PersonNotFoundException;
-import iam.platform.admin.domain.repository.PersonRepository;
+import iam.platform.common.model.exception.UserNotFoundException;
+import iam.platform.admin.domain.repository.UserRepository;
 import iam.platform.admin.domain.repository.TenantAccountRepository;
 import iam.platform.admin.domain.repository.TenantRepository;
 import iam.platform.admin.domain.service.TenantAccountCreationPolicy;
@@ -29,15 +29,15 @@ import java.util.List;
 public class TenantAccountApplicationService {
 
         private final TenantAccountRepository tenantAccountRepository;
-        private final PersonRepository personRepository;
+        private final UserRepository UserRepository;
         private final TenantRepository tenantRepository;
         private final TenantAccountCreationPolicy tenantAccountCreationPolicy;
 
         @Transactional
-        public TenantAccountResponse createTenantAccount(Long personId,
+        public TenantAccountResponse createTenantAccount(Long userId,
                         CreateTenantAccountRequest request) {
-                if (!personRepository.findById(personId).isPresent()) {
-                        throw new PersonNotFoundException("Person not found: " + personId);
+                if (!UserRepository.findById(userId).isPresent()) {
+                        throw new UserNotFoundException("User not found: " + userId);
                 }
 
                 // Validate preconditions via domain service
@@ -45,7 +45,7 @@ public class TenantAccountApplicationService {
                                 request.getAccountCode(), request.getEmployeeNo());
 
                 // Create via domain factory method
-                TenantAccount tenantAccount = TenantAccount.create(personId, request.getTenantId(),
+                TenantAccount tenantAccount = TenantAccount.create(userId, request.getTenantId(),
                                 request.getAccountCode(), request.getEmployeeNo());
 
                 // Apply optional preferences if provided
@@ -55,8 +55,8 @@ public class TenantAccountApplicationService {
                 }
 
                 tenantAccount = tenantAccountRepository.save(tenantAccount);
-                log.info("Tenant account created: personId={}, tenantId={}, accountCode={}",
-                                personId, request.getTenantId(), request.getAccountCode());
+                log.info("Tenant account created: userId={}, tenantId={}, accountCode={}", userId,
+                                request.getTenantId(), request.getAccountCode());
 
                 Tenant tenant = tenantRepository.findById(request.getTenantId()).orElse(null);
                 return toResponse(tenantAccount, tenant);
@@ -142,9 +142,9 @@ public class TenantAccountApplicationService {
                 log.info("Tenant account left: {}", id);
         }
 
-        public List<TenantAccountResponse> getTenantAccountsByPersonId(Long personId) {
-                List<TenantAccount> tenantAccounts = personRepository.findById(personId)
-                                .map(p -> tenantAccountRepository.findByPersonId(p.getId()))
+        public List<TenantAccountResponse> getTenantAccountsByUserId(Long userId) {
+                List<TenantAccount> tenantAccounts = UserRepository.findById(userId)
+                                .map(p -> tenantAccountRepository.findByUserId(p.getId()))
                                 .orElse(List.of());
 
                 return tenantAccounts.stream().map(ta -> {
@@ -168,7 +168,7 @@ public class TenantAccountApplicationService {
 
         private TenantAccountResponse toResponse(TenantAccount tenantAccount, Tenant tenant) {
                 return TenantAccountResponse.builder().id(tenantAccount.getId())
-                                .personId(tenantAccount.getPersonId())
+                                .userId(tenantAccount.getUserId())
                                 .tenantId(tenantAccount.getTenantId())
                                 .tenantCode(tenant != null ? tenant.getTenantCode() : null)
                                 .tenantName(tenant != null ? tenant.getTenantName() : null)

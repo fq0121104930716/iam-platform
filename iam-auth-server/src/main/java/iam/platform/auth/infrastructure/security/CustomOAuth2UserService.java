@@ -7,11 +7,11 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import iam.platform.auth.domain.model.entity.Person;
-import iam.platform.common.model.valueobject.PersonCode;
-import iam.platform.auth.domain.repository.PersonRepository;
-import iam.platform.auth.infrastructure.persistence.entity.PersonExternalLoginPO;
-import iam.platform.auth.infrastructure.persistence.repository.PersonExternalLoginJpaRepository;
+import iam.platform.auth.domain.model.entity.User;
+import iam.platform.common.model.valueobject.UserCode;
+import iam.platform.auth.domain.repository.UserRepository;
+import iam.platform.auth.infrastructure.persistence.entity.UserExternalLoginPO;
+import iam.platform.auth.infrastructure.persistence.repository.UserExternalLoginJpaRepository;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -21,8 +21,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private final PersonRepository personRepository;
-    private final PersonExternalLoginJpaRepository externalLoginJpaRepository;
+    private final UserRepository userRepository;
+    private final UserExternalLoginJpaRepository externalLoginJpaRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -36,17 +36,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         String providerUserId = extractProviderUserId(registrationId, attributes);
 
-        // 通过外部登录记录查找已关联的 Person
-        Person person = externalLoginJpaRepository
+        // 通过外部登录记录查找已关联的 User
+        User user = externalLoginJpaRepository
                 .findByProviderAndProviderUserId(registrationId, providerUserId)
                 .map(externalLogin -> {
                     externalLogin.setLastUsedAt(LocalDateTime.now());
                     externalLoginJpaRepository.save(externalLogin);
-                    return personRepository.findById(externalLogin.getPersonId()).orElse(null);
-                }).orElseGet(() -> findOrCreatePerson(registrationId, providerUserId, oauth2User,
+                    return userRepository.findById(externalLogin.getUserId()).orElse(null);
+                }).orElseGet(() -> findOrCreateUser(registrationId, providerUserId, oauth2User,
                         attributes));
 
-        return new CustomOAuth2User(oauth2User, person);
+        return new CustomOAuth2User(oauth2User, user);
     }
 
     private String extractProviderUserId(String registrationId, Map<String, Object> attributes) {
@@ -57,33 +57,33 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         };
     }
 
-    private Person findOrCreatePerson(String provider, String providerUserId, OAuth2User oauth2User,
+    private User findOrCreateUser(String provider, String providerUserId, OAuth2User oauth2User,
             Map<String, Object> attributes) {
         String email = (String) attributes.get("email");
         String nickname = (String) attributes.get("nickName");
 
-        // 尝试通过邮箱关联已有 Person
-        Person person = null;
+        // 尝试通过邮箱关联已有 User
+        User user = null;
         if (email != null) {
-            person = personRepository.findByEmail(email).orElse(null);
+            user = userRepository.findByEmail(email).orElse(null);
         }
 
-        if (person == null) {
-            // 创建新的 Person
+        if (user == null) {
+            // 创建新的 User
             String username = oauth2User.getName() + "_" + provider;
-            person = Person.builder().personCode(PersonCode.generate().getValue())
+            user = User.builder().userCode(UserCode.generate().getValue())
                     .username(username).email(email).passwordHash("").emailVerified(email != null)
                     .nickname(nickname).enabled(true).accountLocked(false).build();
-            person = personRepository.save(person);
-            log.info("Created new person from OAuth2 login: {}, provider: {}", person.getUsername(),
+            user = userRepository.save(user);
+            log.info("Created new User from OAuth2 login: {}, provider: {}", user.getUsername(),
                     provider);
         }
 
         // 创建外部登录关联记录
-        PersonExternalLoginPO externalLogin =
-                new PersonExternalLoginPO(person.getId(), provider, providerUserId);
+        UserExternalLoginPO externalLogin =
+                new UserExternalLoginPO(user.getId(), provider, providerUserId);
         externalLoginJpaRepository.save(externalLogin);
 
-        return person;
+        return user;
     }
 }

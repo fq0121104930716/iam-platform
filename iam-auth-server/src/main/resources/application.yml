@@ -125,6 +125,17 @@ sso:
     logout-request-ttl-seconds: ${CAS_LOGOUT_TTL:300}
     send-logout-to-all-services: ${CAS_LOGOUT_ALL_SERVICES:true}
 
+  # SAML 2.0 IdP configuration
+  saml:
+    entity-id: ${SAML_ENTITY_ID:https://localhost:9000/saml/metadata}
+    sso-url: ${SAML_SSO_URL:https://localhost:9000/saml/sso}
+    assertion-validity-minutes: ${SAML_ASSERTION_VALIDITY:5}
+    signature-algorithm: ${SAML_SIGNATURE_ALGO:http://www.w3.org/2001/04/xmldsig-more#rsa-sha256}
+    name-id-format: ${SAML_NAME_ID_FORMAT:urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress}
+    sign-assertions: ${SAML_SIGN_ASSERTIONS:true}
+    signing-key-path: ${SAML_SIGNING_KEY_PATH:file:${user.dir}/ssl/keystore.p12}
+    signing-key-password: ${SAML_SIGNING_KEY_PASSWORD:changeit}
+
 management:
   server:
     port: 9001

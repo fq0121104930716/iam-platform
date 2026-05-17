@@ -2,7 +2,7 @@ package iam.platform.auth.domain.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.entity.Tenant;
 import iam.platform.auth.domain.model.entity.TenantAccount;
 import iam.platform.auth.domain.repository.TenantAccountRepository;
@@ -21,8 +21,8 @@ public class TenantResolutionPolicyImpl implements TenantResolutionPolicy {
     private final TenantRepository tenantRepository;
 
     @Override
-    public TenantResolutionResult resolve(Person person, String requestedTenantCode) {
-        List<TenantAccount> activeAccounts = tenantAccountRepository.findByPersonId(person.getId())
+    public TenantResolutionResult resolve(User user, String requestedTenantCode) {
+        List<TenantAccount> activeAccounts = tenantAccountRepository.findByUserId(user.getId())
                 .stream().filter(TenantAccount::isActive).collect(Collectors.toList());
 
         if (activeAccounts.isEmpty()) {

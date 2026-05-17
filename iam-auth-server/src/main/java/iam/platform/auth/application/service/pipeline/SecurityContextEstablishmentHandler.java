@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.entity.Tenant;
 import iam.platform.auth.domain.model.entity.TenantAccount;
 import iam.platform.auth.domain.repository.TenantRepository;
@@ -31,7 +31,7 @@ public class SecurityContextEstablishmentHandler implements PostAuthHandler {
 
     @Override
     public void handle(PostAuthContext context) {
-        Person person = context.getPerson();
+        User user = context.getUser();
         TenantAccount selectedAccount = context.getSelectedTenantAccount();
 
         if (selectedAccount == null) {
@@ -54,7 +54,7 @@ public class SecurityContextEstablishmentHandler implements PostAuthHandler {
         // Build basic auth as the wrapped authentication
         Authentication wrappedAuth =
                 new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                        person.getUsername(), null, authorities);
+                        user.getUsername(), null, authorities);
 
         // Create tenant-aware token
         TenantAwareAuthenticationToken tenantAuth =
@@ -62,7 +62,7 @@ public class SecurityContextEstablishmentHandler implements PostAuthHandler {
                         tenant.getTenantCode(), permissions);
 
         // Set TenantContext ThreadLocal
-        TenantContext.setCurrentPersonId(person.getId());
+        TenantContext.setCurrentUserId(user.getId());
         TenantContext.setCurrentTenantId(tenant.getId());
         TenantContext.setCurrentTenantAccountId(selectedAccount.getId());
 

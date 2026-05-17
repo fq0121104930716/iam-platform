@@ -16,7 +16,7 @@ public class AuditLogResponse {
     private String eventId;
     private String sourceService;
     private Long tenantId;
-    private Long personId;
+    private Long userId;
     private String username;
     private String eventType;
     private String eventCategory;

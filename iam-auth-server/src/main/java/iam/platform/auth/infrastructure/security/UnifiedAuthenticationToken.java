@@ -2,7 +2,7 @@ package iam.platform.auth.infrastructure.security;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
 
@@ -12,12 +12,12 @@ import java.util.Collection;
  * Authentication token for the unified authentication flow.
  *
  * Unauthenticated state: holds AuthenticationCredentials (raw input) Authenticated state: holds
- * Person + AuthenticationMethod
+ * User + AuthenticationMethod
  */
 public class UnifiedAuthenticationToken extends AbstractAuthenticationToken {
 
     private final AuthenticationCredentials credentials;
-    private final Person person;
+    private final User user;
     private final AuthenticationMethod method;
 
     /**
@@ -26,19 +26,19 @@ public class UnifiedAuthenticationToken extends AbstractAuthenticationToken {
     public UnifiedAuthenticationToken(AuthenticationCredentials credentials) {
         super(null);
         this.credentials = credentials;
-        this.person = null;
+        this.user = null;
         this.method = null;
         setAuthenticated(false);
     }
 
     /**
-     * Create an authenticated token (post-authentication, holds resolved person).
+     * Create an authenticated token (post-authentication, holds resolved User).
      */
-    public UnifiedAuthenticationToken(Person person, AuthenticationMethod method,
+    public UnifiedAuthenticationToken(User user, AuthenticationMethod method,
             Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
         this.credentials = null;
-        this.person = person;
+        this.user = user;
         this.method = method;
         setAuthenticated(true);
     }
@@ -50,15 +50,15 @@ public class UnifiedAuthenticationToken extends AbstractAuthenticationToken {
 
     @Override
     public Object getPrincipal() {
-        return person != null ? person.getUsername() : null;
+        return user != null ? user.getUsername() : null;
     }
 
     public AuthenticationCredentials getAuthenticationCredentials() {
         return credentials;
     }
 
-    public Person getPerson() {
-        return person;
+    public User getUser() {
+        return user;
     }
 
     public AuthenticationMethod getMethod() {

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Component;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
 
 import java.util.List;
@@ -30,10 +30,10 @@ public class AuthenticationDispatcher {
      * Authenticate using the provided credentials.
      * 
      * @param credentials The authentication credentials
-     * @return The authenticated Person entity
+     * @return The authenticated User entity
      * @throws BadCredentialsException if authentication fails
      */
-    public Person authenticate(AuthenticationCredentials credentials) {
+    public User authenticate(AuthenticationCredentials credentials) {
         AuthenticationStrategy strategy = findStrategy(credentials);
 
         log.debug("Dispatching authentication to strategy: {}",

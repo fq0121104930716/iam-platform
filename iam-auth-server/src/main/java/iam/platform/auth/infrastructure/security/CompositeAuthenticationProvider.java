@@ -8,7 +8,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import iam.platform.auth.application.service.pipeline.PreAuthContext;
 import iam.platform.auth.application.service.pipeline.PreAuthenticationPipeline;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
 import iam.platform.auth.domain.service.AuthenticationStrategy;
@@ -52,14 +52,14 @@ public class CompositeAuthenticationProvider implements AuthenticationProvider {
                                     "No authentication strategy found for credentials type"));
 
             // Authenticate using the strategy
-            Person person = matchingStrategy.authenticate(credentials);
+            User user = matchingStrategy.authenticate(credentials);
             AuthenticationMethod method = matchingStrategy.getMethod();
 
             // Record successful authentication
             preAuthenticationPipeline.recordSuccess(preContext);
 
             // Return authenticated token
-            return new UnifiedAuthenticationToken(person, method, List.of());
+            return new UnifiedAuthenticationToken(user, method, List.of());
         } catch (AuthenticationException e) {
             // Record failed authentication
             preAuthenticationPipeline.recordFailure(preContext);

@@ -2,7 +2,7 @@ package iam.platform.auth.application.service.pipeline;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.entity.TenantAccount;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
@@ -18,7 +18,7 @@ import java.util.Set;
  */
 @Getter
 public class PostAuthContext {
-    private final Person person;
+    private final User user;
     private final AuthenticationMethod method;
     private final HttpServletRequest request;
     private String requestedTenantCode;
@@ -28,8 +28,8 @@ public class PostAuthContext {
     private boolean requiresTenantSelection;
     private TenantAwareAuthenticationToken resultAuthentication;
 
-    public PostAuthContext(Person person, AuthenticationMethod method, HttpServletRequest request) {
-        this.person = person;
+    public PostAuthContext(User user, AuthenticationMethod method, HttpServletRequest request) {
+        this.user = user;
         this.method = method;
         this.request = request;
     }
@@ -58,11 +58,15 @@ public class PostAuthContext {
         this.resultAuthentication = resultAuthentication;
     }
 
+    public User getUser() {
+        return user;
+    }
+
     /**
      * Convert the context state to an immutable AuthenticationResult.
      */
     public AuthenticationResult toResult() {
-        return new AuthenticationResult(person, method, selectedTenantAccount,
+        return new AuthenticationResult(user, method, selectedTenantAccount,
                 availableTenantAccounts != null ? availableTenantAccounts : List.of(),
                 permissions != null ? permissions : Set.of(), requiresTenantSelection,
                 LocalDateTime.now());

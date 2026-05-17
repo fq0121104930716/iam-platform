@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TenantAccountJpaRepository extends JpaRepository<TenantAccountPO, Long> {
-    Optional<TenantAccountPO> findByPersonIdAndTenantId(Long personId, Long tenantId);
+    Optional<TenantAccountPO> findByUserIdAndTenantId(Long userId, Long tenantId);
 
-    List<TenantAccountPO> findByPersonId(Long personId);
+    List<TenantAccountPO> findByUserId(Long userId);
 
     List<TenantAccountPO> findByTenantId(Long tenantId);
 

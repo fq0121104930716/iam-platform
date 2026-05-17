@@ -5,13 +5,13 @@ import org.springframework.stereotype.Service;
 import iam.platform.common.dto.response.AppStatisticsResponse;
 import iam.platform.common.dto.response.DashboardOverviewResponse;
 import iam.platform.common.dto.response.TenantOverviewResponse;
-import iam.platform.common.dto.response.PersonStatisticsResponse;
+import iam.platform.common.dto.response.UserStatisticsResponse;
 import iam.platform.admin.domain.model.entity.Application;
 import iam.platform.admin.domain.model.entity.Tenant;
 import iam.platform.common.model.enums.TenantStatus;
 import iam.platform.admin.domain.repository.ApplicationRepository;
 import iam.platform.admin.domain.repository.OrganizationRepository;
-import iam.platform.admin.domain.repository.PersonRepository;
+import iam.platform.admin.domain.repository.UserRepository;
 import iam.platform.admin.domain.repository.TenantAccountRepository;
 import iam.platform.admin.domain.repository.TenantRepository;
 
@@ -28,7 +28,7 @@ public class DashboardApplicationService {
         private final TenantRepository tenantRepository;
         private final TenantAccountRepository tenantAccountRepository;
         private final ApplicationRepository applicationRepository;
-        private final PersonRepository personRepository;
+        private final UserRepository UserRepository;
         private final OrganizationRepository organizationRepository;
 
         /**
@@ -39,7 +39,7 @@ public class DashboardApplicationService {
                                 + tenantRepository.countByStatus(TenantStatus.SUSPENDED.name());
                 long activeTenants = tenantRepository.countByStatus(TenantStatus.ACTIVE.name());
 
-                long totalUsers = personRepository.countByEnabledTrue();
+                long totalUsers = UserRepository.countByEnabledTrue();
                 long activeUsers = totalUsers; // enabled = active
 
                 long totalApplications = applicationRepository.countByStatus("ACTIVE")
@@ -95,29 +95,29 @@ public class DashboardApplicationService {
         /**
          * 获取用户统计
          */
-        public PersonStatisticsResponse getPersonStatistics(Long tenantId) {
+        public UserStatisticsResponse getUserStatistics(Long tenantId) {
                 LocalDateTime now = LocalDateTime.now();
                 LocalDateTime todayStart = now.toLocalDate().atStartOfDay();
                 LocalDateTime weekStart = todayStart.minusDays(now.getDayOfWeek().getValue() - 1);
                 LocalDateTime monthStart = todayStart.withDayOfMonth(1);
 
-                long totalPersons = personRepository.countByEnabledTrue();
-                long activePersons = totalPersons;
+                long totalUsers = UserRepository.countByEnabledTrue();
+                long activeUsers = totalUsers;
 
-                long newPersonsToday = personRepository.countByCreatedAtBetween(todayStart, now);
-                long newPersonsThisWeek = personRepository.countByCreatedAtBetween(weekStart, now);
-                long newPersonsThisMonth =
-                                personRepository.countByCreatedAtBetween(monthStart, now);
+                long newUsersToday = UserRepository.countByCreatedAtBetween(todayStart, now);
+                long newUsersThisWeek = UserRepository.countByCreatedAtBetween(weekStart, now);
+                long newUsersThisMonth =
+                                UserRepository.countByCreatedAtBetween(monthStart, now);
 
                 // 简化版：实际应从审计日志计算登录成功率
                 double loginSuccessRate = 95.0; // 默认值
                 long totalLoginsToday = 0;
                 long failedLoginsToday = 0;
 
-                return PersonStatisticsResponse.builder().totalPersons(totalPersons)
-                                .activePersons(activePersons).newPersonsToday(newPersonsToday)
-                                .newPersonsThisWeek(newPersonsThisWeek)
-                                .newPersonsThisMonth(newPersonsThisMonth)
+                return UserStatisticsResponse.builder().totalUsers(totalUsers)
+                                .activeUsers(activeUsers).newUsersToday(newUsersToday)
+                                .newUsersThisWeek(newUsersThisWeek)
+                                .newUsersThisMonth(newUsersThisMonth)
                                 .loginSuccessRate(loginSuccessRate)
                                 .totalLoginsToday(totalLoginsToday)
                                 .failedLoginsToday(failedLoginsToday).build();

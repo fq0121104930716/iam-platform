@@ -1,7 +1,5 @@
 package iam.platform.common.dto.response;
 
-import iam.platform.common.model.enums.AuditResult;
-import iam.platform.common.model.enums.EventCategory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

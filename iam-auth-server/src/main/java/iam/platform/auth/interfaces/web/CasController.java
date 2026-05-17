@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import iam.platform.auth.application.service.CasTicketService;
 import iam.platform.auth.application.service.CasSloService;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
-import iam.platform.auth.domain.repository.PersonRepository;
+import iam.platform.auth.domain.repository.UserRepository;
 
 import java.util.List;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class CasController {
 
     private final CasTicketService casTicketService;
     private final CasSloService casSloService;
-    private final PersonRepository personRepository;
+    private final UserRepository UserRepository;
 
     /**
      * CAS login page - displays login form if user is not authenticated. GET
@@ -66,9 +66,9 @@ public class CasController {
         log.info("Processing CAS login request for user: {}", username);
 
         // 1. Authenticate the user
-        Person person = authenticateUser(username, password);
+        User user = authenticateUser(username, password);
 
-        if (person == null) {
+        if (user == null) {
             // Authentication failed
             if (service != null) {
                 response.sendRedirect(
@@ -81,7 +81,7 @@ public class CasController {
         }
 
         // 2. Create authentication result
-        AuthenticationResult authResult = AuthenticationResult.withSelectedTenant(person,
+        AuthenticationResult authResult = AuthenticationResult.withSelectedTenant(user,
                 AuthenticationMethod.PASSWORD, null, List.of(), Set.of());
 
         // 3. If no service specified, just show success page
@@ -161,9 +161,9 @@ public class CasController {
      * Authenticate user (simplified implementation). In production, this should delegate to
      * AuthenticationDispatcher.
      */
-    private Person authenticateUser(String username, String password) {
+    private User authenticateUser(String username, String password) {
         // Simplified: lookup user by username
         // In real implementation, use AuthenticationDispatcher.authenticate()
-        return personRepository.findByUsername(username).orElse(null);
+        return UserRepository.findByUsername(username).orElse(null);
     }
 }

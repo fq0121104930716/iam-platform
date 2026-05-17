@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * Audit event message for RocketMQ transmission.
- * This DTO is the contract between service producers and the audit consumer.
+ * Audit event message for RocketMQ transmission. This DTO is the contract between service producers
+ * and the audit consumer.
  */
 @Data
 @Builder
@@ -31,8 +31,8 @@ public class AuditEventMessage implements Serializable {
     /** Tenant identifier */
     private Long tenantId;
 
-    /** Person/user identifier */
-    private Long personId;
+    /** User identifier */
+    private Long userId;
 
     /** Username of the actor */
     private String username;

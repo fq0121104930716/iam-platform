@@ -12,9 +12,9 @@ public interface TenantAccountRepository {
 
     Optional<TenantAccount> findById(Long id);
 
-    Optional<TenantAccount> findByPersonIdAndTenantId(Long personId, Long tenantId);
+    Optional<TenantAccount> findByUserIdAndTenantId(Long userId, Long tenantId);
 
-    List<TenantAccount> findByPersonId(Long personId);
+    List<TenantAccount> findByUserId(Long userId);
 
     List<TenantAccount> findByTenantId(Long tenantId);
 

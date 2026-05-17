@@ -34,7 +34,7 @@ public class SamlProtocolAdapter implements ProtocolAdapter {
 
         // Extract RelayState and SAML Request ID from context (set by controller)
         String relayState = context.getAuthenticationResult() != null 
-                ? context.getAuthenticationResult().person().getPersonCode() 
+                ? context.getAuthenticationResult().user().getUserCode() 
                 : "";
         
         // Generate SAML Assertion

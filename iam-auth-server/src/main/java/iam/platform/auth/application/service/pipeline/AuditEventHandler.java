@@ -4,7 +4,7 @@ import iam.platform.common.dto.AuditEventMessage;
 import iam.platform.common.model.enums.AuditEventType;
 import iam.platform.common.model.enums.AuditResult;
 import iam.platform.common.model.enums.EventCategory;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
@@ -34,7 +34,7 @@ public class AuditEventHandler implements PostAuthHandler {
 
     @Override
     public void handle(PostAuthContext context) {
-        Person person = context.getPerson();
+        User user = context.getUser();
         AuthenticationMethod method = context.getMethod();
 
         try {
@@ -42,38 +42,32 @@ public class AuditEventHandler implements PostAuthHandler {
             String ipAddress = extractIpAddress(context.getRequest());
             String userAgent = context.getRequest().getHeader("User-Agent");
             String requestUri = context.getRequest().getRequestURI();
-            Long tenantId = context.getSelectedTenantAccount() != null 
-                    ? context.getSelectedTenantAccount().getTenantId() 
+            Long tenantId = context.getSelectedTenantAccount() != null
+                    ? context.getSelectedTenantAccount().getTenantId()
                     : null;
 
             // Build audit event message
             AuditEventMessage auditEvent = AuditEventMessage.builder()
                     .eventId(UUID.randomUUID().toString())
                     .timestamp(LocalDateTime.now().format(ISO_FORMATTER))
-                    .sourceService("iam-auth-service")
-                    .tenantId(tenantId)
-                    .personId(person.getId())
-                    .username(person.getUsername())
-                    .eventType(AuditEventType.LOGIN_SUCCESS.name())
-                    .eventCategory(EventCategory.AUTHENTICATION.name())
-                    .resourceType("person")
-                    .resourceId(person.getId())
-                    .action("User " + person.getUsername() + " logged in via " + method)
-                    .ipAddress(ipAddress)
-                    .userAgent(userAgent)
-                    .requestUri(requestUri)
+                    .sourceService("iam-auth-service").tenantId(tenantId).userId(user.getId())
+                    .username(user.getUsername()).eventType(AuditEventType.LOGIN_SUCCESS.name())
+                    .eventCategory(EventCategory.AUTHENTICATION.name()).resourceType("User")
+                    .resourceId(user.getId())
+                    .action("User " + user.getUsername() + " logged in via " + method)
+                    .ipAddress(ipAddress).userAgent(userAgent).requestUri(requestUri)
                     .result(AuditResult.SUCCESS.name())
-                    .build();
+                    .traceId(extractTraceId(context.getRequest())).build();
 
             // Send to RocketMQ
             Message<AuditEventMessage> message = MessageBuilder.withPayload(auditEvent).build();
             rocketMQTemplate.syncSend(AUDIT_TOPIC + ":AUTHENTICATION", message);
 
-            log.debug("Published login audit event: eventId={}, username={}, method={}", 
-                    auditEvent.getEventId(), person.getUsername(), method);
+            log.debug("Published login audit event: eventId={}, username={}, method={}",
+                    auditEvent.getEventId(), user.getUsername(), method);
 
         } catch (Exception e) {
-            log.error("Failed to publish login audit event for user: {}", person.getUsername(), e);
+            log.error("Failed to publish login audit event for user: {}", user.getUsername(), e);
         }
     }
 
@@ -84,6 +78,25 @@ public class AuditEventHandler implements PostAuthHandler {
             return xForwardedFor.split(",")[0].trim();
         }
         return request.getRemoteAddr();
+    }
+
+    private String extractTraceId(jakarta.servlet.http.HttpServletRequest request) {
+        // Try common tracing headers in order of preference
+        String traceId = request.getHeader("X-Trace-Id");
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = request.getHeader("X-B3-TraceId");
+        }
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = request.getHeader("traceparent");
+            // W3C Trace Context format: version-traceId-spanId-flags
+            if (traceId != null && traceId.contains("-")) {
+                String[] parts = traceId.split("-");
+                if (parts.length >= 2) {
+                    traceId = parts[1];
+                }
+            }
+        }
+        return traceId;
     }
 
     @Override

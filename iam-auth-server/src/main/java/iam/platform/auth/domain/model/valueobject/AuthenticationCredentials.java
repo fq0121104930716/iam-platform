@@ -1,6 +1,6 @@
 package iam.platform.auth.domain.model.valueobject;
 
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 
 /**
  * Sealed interface representing authentication input credentials. Each record variant corresponds
@@ -36,13 +36,13 @@ public sealed interface AuthenticationCredentials {
         }
     }
 
-    record OAuth2Credentials(String provider, Person resolvedPerson)
+    record OAuth2Credentials(String provider, User resolvedUser)
             implements AuthenticationCredentials {
         public OAuth2Credentials {
             if (provider == null || provider.isBlank())
                 throw new IllegalArgumentException("Provider is required");
-            if (resolvedPerson == null)
-                throw new IllegalArgumentException("Resolved person is required");
+            if (resolvedUser == null)
+                throw new IllegalArgumentException("Resolved User is required");
         }
     }
 

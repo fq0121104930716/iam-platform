@@ -2,6 +2,7 @@ package iam.platform.admin.infrastructure.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * Tenant identification strategies (in priority order): 1. X-Tenant-Id header 2. tenant_id query
  * parameter
  */
+@Slf4j
 @Component
 public class TenantInterceptor implements HandlerInterceptor {
 
@@ -33,8 +35,9 @@ public class TenantInterceptor implements HandlerInterceptor {
             try {
                 Long tenantId = Long.parseLong(tenantIdStr.trim());
                 TenantContext.setCurrentTenantId(tenantId);
-            } catch (NumberFormatException ignored) {
-                // Invalid tenant ID format, skip setting context
+            } catch (NumberFormatException e) {
+                log.warn("Invalid tenant ID format: {}", tenantIdStr);
+                // Skip setting context for invalid tenant ID
             }
         }
 

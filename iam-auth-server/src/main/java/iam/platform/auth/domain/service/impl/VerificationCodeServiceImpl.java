@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import iam.platform.auth.domain.model.entity.Person;
-import iam.platform.auth.domain.repository.PersonRepository;
+import iam.platform.auth.domain.model.entity.User;
+import iam.platform.auth.domain.repository.UserRepository;
 import iam.platform.auth.domain.service.VerificationCodeService;
 
 import java.security.SecureRandom;
@@ -17,7 +17,7 @@ import java.time.Duration;
 public class VerificationCodeServiceImpl implements VerificationCodeService {
 
     private final StringRedisTemplate redisTemplate;
-    private final PersonRepository personRepository;
+    private final UserRepository UserRepository;
 
     private static final Duration CODE_EXPIRE = Duration.ofMinutes(5);
     private static final int CODE_LENGTH = 6;
@@ -95,26 +95,26 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
     }
 
     @Override
-    public Person findOrCreatePersonByPhone(String phone) {
-        return personRepository.findByPhone(phone).orElseGet(() -> {
-            Person newPerson = Person.builder().phone(phone)
+    public User findOrCreateUserByPhone(String phone) {
+        return UserRepository.findByPhone(phone).orElseGet(() -> {
+            User newUser = User.builder().phone(phone)
                     .username("user_" + phone.substring(phone.length() - 4))
                     .phoneVerified(true).enabled(true).build();
-            Person savedPerson = personRepository.save(newPerson);
-            log.info("Created new person from SMS login: {}", savedPerson.getUsername());
-            return savedPerson;
+            User savedUser = UserRepository.save(newUser);
+            log.info("Created new User from SMS login: {}", savedUser.getUsername());
+            return savedUser;
         });
     }
 
     @Override
-    public Person findOrCreatePersonByEmail(String email) {
-        return personRepository.findByEmail(email).orElseGet(() -> {
+    public User findOrCreateUserByEmail(String email) {
+        return UserRepository.findByEmail(email).orElseGet(() -> {
             String username = email.substring(0, email.indexOf('@'));
-            Person newPerson = Person.builder().email(email).username(username)
+            User newUser = User.builder().email(email).username(username)
                     .emailVerified(true).enabled(true).build();
-            Person savedPerson = personRepository.save(newPerson);
-            log.info("Created new person from Email login: {}", savedPerson.getUsername());
-            return savedPerson;
+            User savedUser = UserRepository.save(newUser);
+            log.info("Created new User from Email login: {}", savedUser.getUsername());
+            return savedUser;
         });
     }
 

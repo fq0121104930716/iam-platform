@@ -51,7 +51,7 @@ public class AuditLogApplicationService {
         if (request.getTenantId() != null) {
             logsPage = auditLogRepository.findByTenantId(request.getTenantId(), pageRequest);
         } else if (request.getPersonId() != null) {
-            logsPage = auditLogRepository.findByPersonId(request.getPersonId(), pageRequest);
+            logsPage = auditLogRepository.findByUserId(request.getUserId(), pageRequest);
         } else if (request.getEventCategory() != null) {
             logsPage = auditLogRepository.findByEventCategory(request.getEventCategory(), pageRequest);
         } else if (request.getResult() != null) {
@@ -79,7 +79,7 @@ public class AuditLogApplicationService {
 
     public PageResponse<AuditLogResponse> getUserAuditLogs(Long userId, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<AuditLog> logsPage = auditLogRepository.findByPersonId(userId, pageRequest);
+        Page<AuditLog> logsPage = auditLogRepository.findByUserId(userId, pageRequest);
 
         List<AuditLogResponse> content = logsPage.getContent().stream()
                 .map(this::toResponse)
@@ -102,18 +102,32 @@ public class AuditLogApplicationService {
     }
 
     public AuditStatisticsResponse getStatistics(Long tenantId, LocalDateTime startDate, LocalDateTime endDate) {
-        Map<EventCategory, Long> byCategory = auditLogRepository.countByEventCategory(
+        Map<EventCategory, Long> byCategoryEnum = auditLogRepository.countByEventCategory(
                 tenantId, startDate, endDate);
         
-        Map<AuditResult, Long> byResult = Map.of(
+        Map<AuditResult, Long> byResultEnum = Map.of(
                 AuditResult.SUCCESS, auditLogRepository.findByResult(AuditResult.SUCCESS, 
                         PageRequest.of(0, 1)).getTotalElements(),
                 AuditResult.FAILURE, auditLogRepository.findByResult(AuditResult.FAILURE, 
                         PageRequest.of(0, 1)).getTotalElements()
         );
 
-        Map<String, Long> topEventTypes = auditLogRepository.countTopEventTypes(
+        // Convert enum keys to string keys for the response
+        Map<String, Long> byCategory = byCategoryEnum.entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue));
+        Map<String, Long> byResult = byResultEnum.entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue));
+
+        Map<String, Long> topEventTypesMap = auditLogRepository.countTopEventTypes(
                 tenantId, startDate, endDate, 10);
+        
+        // Convert Map to List of TopEventType
+        List<AuditStatisticsResponse.TopEventType> topEventTypes = topEventTypesMap.entrySet().stream()
+                .map(e -> AuditStatisticsResponse.TopEventType.builder()
+                        .eventType(e.getKey())
+                        .count(e.getValue())
+                        .build())
+                .collect(Collectors.toList());
 
         return AuditStatisticsResponse.builder()
                 .byCategory(byCategory)
@@ -154,7 +168,7 @@ public class AuditLogApplicationService {
                 .eventId(log.getEventId())
                 .sourceService(log.getSourceService())
                 .tenantId(log.getTenantId())
-                .personId(log.getPersonId())
+                .userId(log.getUserId())
                 .username(log.getUsername())
                 .eventType(log.getEventType() != null ? log.getEventType().name() : null)
                 .eventCategory(log.getEventCategory() != null ? log.getEventCategory().name() : null)

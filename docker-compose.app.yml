@@ -1,0 +1,169 @@
+version: '3.8'
+
+services:
+  # IAM BFF Server - Backend for Frontend
+  iam-bff-service:
+    build:
+      context: .
+      dockerfile: iam-bff-server/Dockerfile
+    container_name: iam-bff-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_ADDR=nacos:8848
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=iam59!z$
+      - AUTH_SERVER_URL=http://iam-auth-server:9001
+      - ADMIN_SERVER_URL=http://iam-admin-server:9002
+    ports:
+      - "9010:9010"
+    depends_on:
+      nacos:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - iam-network
+    restart: unless-stopped
+
+  # IAM Auth Server - Authentication & Authorization
+  iam-auth-server:
+    build:
+      context: .
+      dockerfile: iam-auth-server/Dockerfile
+    container_name: iam-auth-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_ADDR=nacos:8848
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=sso_oidc
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=STPass123!
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=iam59!z$
+      - ROCKETMQ_NAMESRV=rocketmq-namesrv:9876
+      - ENCRYPTION_KEY=changeme-changeme-changeme-changeme!!
+    ports:
+      - "9001:9001"
+      - "9005:9005"
+    depends_on:
+      nacos:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rocketmq-namesrv:
+        condition: service_started
+      rocketmq-broker:
+        condition: service_started
+    networks:
+      - iam-network
+    restart: unless-stopped
+
+  # IAM Admin Server - User & Permission Management
+  iam-admin-server:
+    build:
+      context: .
+      dockerfile: iam-admin-server/Dockerfile
+    container_name: iam-admin-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_ADDR=nacos:8848
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=sso_oidc
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=STPass123!
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=iam59!z$
+      - ROCKETMQ_NAMESRV=rocketmq-namesrv:9876
+      - ENCRYPTION_KEY=changeme-changeme-changeme-changeme!!
+    ports:
+      - "9002:9002"
+      - "9006:9006"
+    depends_on:
+      nacos:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rocketmq-namesrv:
+        condition: service_started
+      rocketmq-broker:
+        condition: service_started
+    networks:
+      - iam-network
+    restart: unless-stopped
+
+  # IAM Audit Server - Centralized Audit Log Management
+  iam-audit-server:
+    build:
+      context: .
+      dockerfile: iam-audit-server/Dockerfile
+    container_name: iam-audit-server
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_ADDR=nacos:8848
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=sso_oidc
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=STPass123!
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=iam59!z$
+      - ROCKETMQ_NAMESRV=rocketmq-namesrv:9876
+      - ENCRYPTION_KEY=changeme-changeme-changeme-changeme!!
+    ports:
+      - "9003:9003"
+      - "9004:9004"
+    depends_on:
+      nacos:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rocketmq-namesrv:
+        condition: service_started
+      rocketmq-broker:
+        condition: service_started
+    networks:
+      - iam-network
+    restart: unless-stopped
+
+  # IAM Gateway - API Gateway
+  iam-gateway:
+    build:
+      context: .
+      dockerfile: iam-gateway/Dockerfile
+    container_name: iam-gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_ADDR=nacos:8848
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=iam59!z$
+      - AUTH_SERVER_URL=http://iam-auth-server:9001
+      - ADMIN_SERVER_URL=http://iam-admin-server:9002
+      - BFF_SERVER_URL=http://iam-bff-service:9010
+      - AUDIT_SERVER_URL=http://iam-audit-server:9003
+    ports:
+      - "9000:9000"
+    depends_on:
+      nacos:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - iam-network
+    restart: unless-stopped
+
+networks:
+  iam-network:
+    driver: bridge

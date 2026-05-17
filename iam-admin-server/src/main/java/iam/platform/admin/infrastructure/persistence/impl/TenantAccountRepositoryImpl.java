@@ -34,14 +34,14 @@ public class TenantAccountRepositoryImpl implements TenantAccountRepository {
     }
 
     @Override
-    public Optional<TenantAccount> findByPersonIdAndTenantId(Long personId, Long tenantId) {
-        return jpaRepository.findByPersonIdAndTenantId(personId, tenantId)
+    public Optional<TenantAccount> findByUserIdAndTenantId(Long userId, Long tenantId) {
+        return jpaRepository.findByUserIdAndTenantId(userId, tenantId)
                 .map(domainPoMapper::toTenantAccountDomain);
     }
 
     @Override
-    public List<TenantAccount> findByPersonId(Long personId) {
-        return jpaRepository.findByPersonId(personId).stream()
+    public List<TenantAccount> findByUserId(Long userId) {
+        return jpaRepository.findByUserId(userId).stream()
                 .map(domainPoMapper::toTenantAccountDomain).collect(Collectors.toList());
     }
 

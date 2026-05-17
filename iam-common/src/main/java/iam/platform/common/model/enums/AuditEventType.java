@@ -17,7 +17,10 @@ public enum AuditEventType {
 
     // ACCOUNT
     PERSON_CREATED(EventCategory.ACCOUNT), PERSON_UPDATED(EventCategory.ACCOUNT), PERSON_DELETED(
-            EventCategory.ACCOUNT), TENANT_ACCOUNT_CREATED(
+            EventCategory.ACCOUNT),
+    USER_CREATED(EventCategory.ACCOUNT), USER_UPDATED(EventCategory.ACCOUNT), USER_DELETED(
+            EventCategory.ACCOUNT),
+    TENANT_ACCOUNT_CREATED(
                     EventCategory.ACCOUNT), TENANT_ACCOUNT_UPDATED(
                             EventCategory.ACCOUNT), PASSWORD_CHANGED(
                                     EventCategory.ACCOUNT), ACCOUNT_LOCKED(

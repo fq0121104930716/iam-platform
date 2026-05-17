@@ -5,10 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
-import iam.platform.auth.domain.repository.PersonRepository;
+import iam.platform.auth.domain.repository.UserRepository;
 import iam.platform.auth.domain.service.AuthenticationStrategy;
 
 /**
@@ -25,7 +25,7 @@ import iam.platform.auth.domain.service.AuthenticationStrategy;
 @RequiredArgsConstructor
 public class PasswordAuthenticationStrategy implements AuthenticationStrategy {
 
-    private final PersonRepository personRepository;
+    private final UserRepository UserRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -39,25 +39,25 @@ public class PasswordAuthenticationStrategy implements AuthenticationStrategy {
     }
 
     @Override
-    public Person authenticate(AuthenticationCredentials credentials) {
+    public User authenticate(AuthenticationCredentials credentials) {
         if (!(credentials instanceof AuthenticationCredentials.PasswordCredentials pc)) {
             throw new IllegalArgumentException("Unsupported credentials type");
         }
 
         log.debug("Authenticating user with password: username={}", pc.username());
 
-        // Find person by username
-        Person person = personRepository.findByUsername(pc.username())
+        // Find User by username
+        User user = UserRepository.findByUsername(pc.username())
                 .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
 
         // Validate password
-        if (!passwordEncoder.matches(pc.password(), person.getPasswordHash())) {
+        if (!passwordEncoder.matches(pc.password(), user.getPasswordHash())) {
             throw new BadCredentialsException("Invalid username or password");
         }
 
-        log.info("Password authentication successful: username={}, personId={}", pc.username(),
-                person.getId());
+        log.info("Password authentication successful: username={}, userId={}", pc.username(),
+                user.getId());
 
-        return person;
+        return user;
     }
 }

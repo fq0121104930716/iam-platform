@@ -27,7 +27,7 @@ public class TenantAccountPO {
 
     @Setter
     @Column(name = "person_id", nullable = false)
-    private Long personId;
+    private Long userId;
 
     @Setter
     @Column(name = "tenant_id", nullable = false)
@@ -71,8 +71,8 @@ public class TenantAccountPO {
     @Setter
     private LocalDateTime updatedAt;
 
-    public TenantAccountPO(Long personId, Long tenantId, String accountCode) {
-        this.personId = personId;
+    public TenantAccountPO(Long userId, Long tenantId, String accountCode) {
+        this.userId = userId;
         this.tenantId = tenantId;
         this.accountCode = accountCode;
         this.status = "ACTIVE";

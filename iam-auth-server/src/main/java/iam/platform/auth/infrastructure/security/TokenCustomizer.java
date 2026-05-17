@@ -5,9 +5,9 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.stereotype.Component;
 import iam.platform.auth.application.service.TenantAccountRoleApplicationService;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.entity.TenantAccount;
-import iam.platform.auth.domain.repository.PersonRepository;
+import iam.platform.auth.domain.repository.UserRepository;
 import iam.platform.auth.domain.repository.TenantAccountRepository;
 
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
 
-    private final PersonRepository personRepository;
+    private final UserRepository UserRepository;
     private final TenantAccountRepository tenantAccountRepository;
     private final TenantAccountRoleApplicationService tenantAccountRoleService;
 
@@ -34,18 +34,18 @@ public class TokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext
     public void customize(JwtEncodingContext context) {
         String username = context.getPrincipal().getName();
 
-        // Find person
-        Person person = personRepository.findByUsername(username).orElse(null);
-        if (person == null) {
+        // Find User
+        User user = UserRepository.findByUsername(username).orElse(null);
+        if (user == null) {
             return;
         }
 
         // Add basic user claims
-        context.getClaims().claim("email", person.getEmail());
-        if (person.getNickname() != null) {
-            context.getClaims().claim("nickname", person.getNickname());
+        context.getClaims().claim("email", user.getEmail());
+        if (user.getNickname() != null) {
+            context.getClaims().claim("nickname", user.getNickname());
         }
-        context.getClaims().claim("person_id", person.getId());
+        context.getClaims().claim("user_id", user.getId());
 
         // Try to get tenant context from current request
         Long tenantId = TenantContext.getCurrentTenantId();
@@ -53,10 +53,10 @@ public class TokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext
 
         if (tenantId != null && tenantAccountId != null) {
             // Tenant context is established - add tenant-specific claims
-            addTenantClaims(context, tenantId, tenantAccountId, person);
+            addTenantClaims(context, tenantId, tenantAccountId, user);
         } else {
             // No tenant context - add all tenant accounts for client to choose
-            addAllTenantAccountsClaims(context, person);
+            addAllTenantAccountsClaims(context, user);
         }
     }
 
@@ -64,7 +64,7 @@ public class TokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext
      * Add claims for a specific tenant context.
      */
     private void addTenantClaims(JwtEncodingContext context, Long tenantId, Long tenantAccountId,
-            Person person) {
+            User user) {
         // Add tenant ID and account ID
         context.getClaims().claim("tenant_id", tenantId);
         context.getClaims().claim("tenant_account_id", tenantAccountId);
@@ -100,8 +100,8 @@ public class TokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext
      * Add claims for all tenant accounts (when no specific tenant is selected). This allows the
      * client application to prompt user to select a tenant.
      */
-    private void addAllTenantAccountsClaims(JwtEncodingContext context, Person person) {
-        List<TenantAccount> tenantAccounts = tenantAccountRepository.findByPersonId(person.getId());
+    private void addAllTenantAccountsClaims(JwtEncodingContext context, User user) {
+        List<TenantAccount> tenantAccounts = tenantAccountRepository.findByUserId(user.getId());
 
         if (!tenantAccounts.isEmpty()) {
             // Add list of available tenant accounts

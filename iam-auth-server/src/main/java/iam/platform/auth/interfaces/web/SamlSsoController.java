@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import iam.platform.auth.application.service.SamlAssertionBuilder;
 import iam.platform.auth.application.service.SamlMetadataGenerator;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
-import iam.platform.auth.domain.repository.PersonRepository;
+import iam.platform.auth.domain.repository.UserRepository;
 
 import java.util.List;
 import java.util.Set;
@@ -33,7 +33,7 @@ public class SamlSsoController {
 
     private final SamlAssertionBuilder assertionBuilder;
     private final SamlMetadataGenerator metadataGenerator;
-    private final PersonRepository personRepository;
+    private final UserRepository UserRepository;
 
     /**
      * SAML SSO endpoint - displays login page if user is not authenticated. GET
@@ -64,9 +64,9 @@ public class SamlSsoController {
 
         // 1. Authenticate the user (simplified - in real implementation, use
         // AuthenticationDispatcher)
-        Person person = authenticateUser(username, password);
+        User user = authenticateUser(username, password);
 
-        if (person == null) {
+        if (user == null) {
             // Authentication failed, redirect back to login with error
             response.sendRedirect("/saml/sso?acsUrl=" + java.net.URLEncoder.encode(acsUrl, "UTF-8")
                     + "&error=invalid_credentials");
@@ -75,7 +75,7 @@ public class SamlSsoController {
 
         // 2. Create authentication result
         AuthenticationResult authResult =
-                AuthenticationResult.withSelectedTenant(person, AuthenticationMethod.PASSWORD, null, // No
+                AuthenticationResult.withSelectedTenant(user, AuthenticationMethod.PASSWORD, null, // No
                                                                                                      // tenant
                                                                                                      // selection
                                                                                                      // for
@@ -106,10 +106,10 @@ public class SamlSsoController {
      * Authenticate user (simplified implementation). In production, this should delegate to
      * AuthenticationDispatcher.
      */
-    private Person authenticateUser(String username, String password) {
+    private User authenticateUser(String username, String password) {
         // Simplified: lookup user by username
         // In real implementation, use AuthenticationDispatcher.authenticate()
-        return personRepository.findByUsername(username).orElse(null);
+        return UserRepository.findByUsername(username).orElse(null);
     }
 
     /**

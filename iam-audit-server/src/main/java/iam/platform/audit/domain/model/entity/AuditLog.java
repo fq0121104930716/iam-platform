@@ -25,7 +25,7 @@ public class AuditLog {
     private String eventId;
     private String sourceService;
     private Long tenantId;
-    private Long personId;
+    private Long userId;
     private String username;
     private AuditEventType eventType;
     private EventCategory eventCategory;
@@ -49,7 +49,7 @@ public class AuditLog {
             String eventId,
             String sourceService,
             Long tenantId,
-            Long personId,
+            Long userId,
             String username,
             AuditEventType eventType,
             EventCategory eventCategory,
@@ -68,7 +68,7 @@ public class AuditLog {
                 .eventId(eventId)
                 .sourceService(sourceService)
                 .tenantId(tenantId)
-                .personId(personId)
+                .userId(userId)
                 .username(username)
                 .eventType(eventType)
                 .eventCategory(eventCategory)

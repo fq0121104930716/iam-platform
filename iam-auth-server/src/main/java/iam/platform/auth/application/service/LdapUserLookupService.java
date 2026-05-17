@@ -7,14 +7,14 @@ import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.query.LdapQuery;
 import org.springframework.ldap.query.LdapQueryBuilder;
 import org.springframework.stereotype.Service;
-import iam.platform.auth.domain.model.entity.Person;
-import iam.platform.auth.domain.repository.PersonRepository;
+import iam.platform.auth.domain.model.entity.User;
+import iam.platform.auth.domain.repository.UserRepository;
 import iam.platform.auth.infrastructure.config.LdapProperties;
 
 import java.util.List;
 
 /**
- * Service for looking up LDAP users and mapping them to local Person entities.
+ * Service for looking up LDAP users and mapping them to local User entities.
  */
 @Slf4j
 @Service
@@ -22,7 +22,7 @@ import java.util.List;
 public class LdapUserLookupService {
 
     private final LdapTemplate ldapTemplate;
-    private final PersonRepository personRepository;
+    private final UserRepository UserRepository;
     private final LdapProperties properties;
 
     /**
@@ -58,29 +58,29 @@ public class LdapUserLookupService {
     }
 
     /**
-     * Find an existing Person by LDAP username, or create a new one if not found.
+     * Find an existing User by LDAP username, or create a new one if not found.
      */
-    public Person findOrCreatePersonByLdap(String username, String domain) {
-        // Try to find existing person by username
-        Person person = personRepository.findByUsername(username).orElse(null);
+    public User findOrCreateUserByLdap(String username, String domain) {
+        // Try to find existing User by username
+        User user = UserRepository.findByUsername(username).orElse(null);
 
-        if (person != null) {
-            log.debug("Found existing person for LDAP user: {}, personId={}", username,
-                    person.getId());
-            return person;
+        if (user != null) {
+            log.debug("Found existing User for LDAP user: {}, userId={}", username,
+                    user.getId());
+            return user;
         }
 
-        // Create new person
-        log.info("Creating new person for LDAP user: {}", username);
+        // Create new User
+        log.info("Creating new User for LDAP user: {}", username);
         String email = username + "@" + (domain != null ? domain : "ldap.local");
 
-        person = Person.builder().username(username).email(email).nickname(username)
+        user = User.builder().username(username).email(email).nickname(username)
                 .passwordHash("") // No password stored for LDAP users
                 .enabled(true).accountLocked(false).build();
 
-        person = personRepository.save(person);
+        user = UserRepository.save(user);
 
-        log.info("Created new person for LDAP user: personId={}", person.getId());
-        return person;
+        log.info("Created new User for LDAP user: userId={}", user.getId());
+        return user;
     }
 }

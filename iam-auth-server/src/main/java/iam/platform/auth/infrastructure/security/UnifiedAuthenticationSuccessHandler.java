@@ -10,7 +10,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import iam.platform.auth.application.service.AuthenticationApplicationService;
 import iam.platform.auth.application.service.routing.ProtocolRoute;
 import iam.platform.auth.application.service.routing.ProtocolRouter;
-import iam.platform.auth.domain.model.entity.Person;
+import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
 import iam.platform.auth.domain.service.impl.OAuth2AuthenticationStrategy;
@@ -35,17 +35,17 @@ public class UnifiedAuthenticationSuccessHandler implements AuthenticationSucces
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException {
-        Person person;
+        User user;
         AuthenticationMethod method;
 
         if (authentication instanceof UnifiedAuthenticationToken unifiedToken) {
             // First-party authentication (password, SMS, email, LDAP)
-            person = unifiedToken.getPerson();
+            user = unifiedToken.getUser();
             method = unifiedToken.getMethod();
         } else if (authentication instanceof OAuth2AuthenticationToken oauth2Token) {
             // OAuth2 social login
             CustomOAuth2User oauth2User = (CustomOAuth2User) oauth2Token.getPrincipal();
-            person = oauth2User.getPerson();
+            user = oauth2User.getUser();
             String provider = oauth2Token.getAuthorizedClientRegistrationId();
             method = OAuth2AuthenticationStrategy.fromProvider(provider);
         } else {
@@ -56,7 +56,7 @@ public class UnifiedAuthenticationSuccessHandler implements AuthenticationSucces
 
         // Run the post-authentication pipeline
         AuthenticationResult result =
-                applicationService.completeAuthentication(person, method, request);
+                applicationService.completeAuthentication(user, method, request);
 
         // Delegate to protocol router to determine redirect destination
         ProtocolRoute route = protocolRouter.resolve(request, result);

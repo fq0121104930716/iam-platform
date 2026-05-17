@@ -24,7 +24,7 @@ public class TenantResolutionHandler implements PostAuthHandler {
     public void handle(PostAuthContext context) {
         String tenantCode = extractTenantCode(context);
         TenantResolutionResult result =
-                tenantResolutionPolicy.resolve(context.getPerson(), tenantCode);
+                tenantResolutionPolicy.resolve(context.getUser(), tenantCode);
 
         switch (result.status()) {
             case AUTO_SELECTED -> {

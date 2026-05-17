@@ -29,226 +29,266 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ApplicationApplicationService {
 
-    private final ApplicationRepository applicationRepository;
-    private final ApplicationPermissionRepository permissionRepository;
+        private final ApplicationRepository applicationRepository;
+        private final ApplicationPermissionRepository permissionRepository;
 
-    @Transactional
-    @AuditLog(value = AuditEventType.APPLICATION_CREATED, resourceType = "application", action = "创建应用 #{#request.appName}")
-    public ApplicationCreatedResponse createApplication(CreateApplicationRequest request) {
-        // Domain factory handles credential generation, defaults, and state
-        TokenSettings tokenSettings = TokenSettings.of(
-                request.getAccessTokenTtlSeconds(),
-                request.getRefreshTokenTtlSeconds());
+        @Transactional
+        @AuditLog(value = AuditEventType.APPLICATION_CREATED, resourceType = "application",
+                        action = "创建应用 #{#request.appName}")
+        public ApplicationCreatedResponse createApplication(CreateApplicationRequest request) {
+                // Domain factory handles credential generation, defaults, and state
+                TokenSettings tokenSettings = TokenSettings.of(request.getAccessTokenTtlSeconds(),
+                                request.getRefreshTokenTtlSeconds());
 
-        Application app = Application.register(
-                request.getAppName(),
-                request.getTenantId(),
-                AppType.valueOf(request.getAppType()),
-                request.getDescription(),
-                request.getLogoUrl(),
-                request.getHomePageUrl(),
-                request.getCallbackUrls() != null ? new HashSet<>(request.getCallbackUrls()) : null,
-                request.getPostLogoutRedirectUris() != null ? new HashSet<>(request.getPostLogoutRedirectUris()) : null,
-                request.getAllowedScopes() != null ? new HashSet<>(request.getAllowedScopes()) : null,
-                request.isRequirePkce(),
-                request.isRequireAuthorizationConsent(),
-                tokenSettings);
+                AppType appType;
+                try {
+                        appType = AppType.valueOf(request.getAppType());
+                } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException(
+                                        "Invalid app type: " + request.getAppType(), e);
+                }
 
-        app = applicationRepository.save(app);
-        log.info("Application created: {} ({}) for tenant {}", app.getAppName(), app.getAppId(),
-                app.getTenantId());
+                Application app = Application.register(request.getAppName(), request.getTenantId(),
+                                appType, request.getDescription(), request.getLogoUrl(),
+                                request.getHomePageUrl(),
+                                request.getCallbackUrls() != null
+                                                ? new HashSet<>(request.getCallbackUrls())
+                                                : null,
+                                request.getPostLogoutRedirectUris() != null
+                                                ? new HashSet<>(request.getPostLogoutRedirectUris())
+                                                : null,
+                                request.getAllowedScopes() != null
+                                                ? new HashSet<>(request.getAllowedScopes())
+                                                : null,
+                                request.isRequirePkce(), request.isRequireAuthorizationConsent(),
+                                tokenSettings);
 
-        return toCreatedResponse(app);
-    }
+                app = applicationRepository.save(app);
+                log.info("Application created: {} ({}) for tenant {}", app.getAppName(),
+                                app.getAppId(), app.getTenantId());
 
-    public ApplicationResponse getApplication(Long id) {
-        Application app = applicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Application not found: " + id));
-        return toResponse(app);
-    }
-
-    public ApplicationResponse getApplicationByAppId(String appId) {
-        Application app = applicationRepository.findByAppId(appId)
-                .orElseThrow(() -> new RuntimeException("Application not found: " + appId));
-        return toResponse(app);
-    }
-
-    public List<ApplicationResponse> getApplicationsByTenantId(Long tenantId) {
-        return applicationRepository.findByTenantId(tenantId).stream().map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    public List<ApplicationResponse> listAllApplications() {
-        return applicationRepository.findAll().stream().map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional
-    @AuditLog(value = AuditEventType.APPLICATION_UPDATED, resourceType = "application", action = "更新应用 ID=#{#id}")
-    public ApplicationResponse updateApplication(Long id, UpdateApplicationRequest request) {
-        Application app = applicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Application not found: " + id));
-
-        // Delegate to domain behavior methods
-        app.updateMetadata(
-                request.getAppName(),
-                request.getDescription(),
-                request.getLogoUrl(),
-                request.getHomePageUrl());
-
-        if (request.getCallbackUrls() != null || request.getPostLogoutRedirectUris() != null
-                || request.getAllowedScopes() != null || request.getRequirePkce() != null
-                || request.getRequireAuthorizationConsent() != null) {
-            app.updateOAuthSettings(
-                    request.getCallbackUrls() != null ? new HashSet<>(request.getCallbackUrls()) : null,
-                    request.getPostLogoutRedirectUris() != null ? new HashSet<>(request.getPostLogoutRedirectUris())
-                            : null,
-                    request.getAllowedScopes() != null ? new HashSet<>(request.getAllowedScopes()) : null,
-                    request.getRequirePkce() != null ? request.getRequirePkce() : app.isRequireProofKey(),
-                    request.getRequireAuthorizationConsent() != null ? request.getRequireAuthorizationConsent()
-                            : app.isRequireAuthorizationConsent());
+                return toCreatedResponse(app);
         }
 
-        if (request.getAccessTokenTtlSeconds() != null || request.getRefreshTokenTtlSeconds() != null) {
-            TokenSettings newSettings = TokenSettings.of(
-                    request.getAccessTokenTtlSeconds() != null ? request.getAccessTokenTtlSeconds()
-                            : app.getAccessTokenTtlSeconds(),
-                    request.getRefreshTokenTtlSeconds() != null ? request.getRefreshTokenTtlSeconds()
-                            : app.getRefreshTokenTtlSeconds());
-            app.updateTokenSettings(newSettings);
+        public ApplicationResponse getApplication(Long id) {
+                Application app = applicationRepository.findById(id).orElseThrow(
+                                () -> new RuntimeException("Application not found: " + id));
+                return toResponse(app);
         }
 
-        app = applicationRepository.save(app);
-        log.info("Application updated: {}", app.getAppId());
-        return toResponse(app);
-    }
-
-    @Transactional
-    @AuditLog(value = AuditEventType.APPLICATION_DELETED, resourceType = "application", action = "删除应用 ID=#{#id}")
-    public void deleteApplication(Long id) {
-        if (!applicationRepository.findById(id).isPresent()) {
-            throw new RuntimeException("Application not found: " + id);
-        }
-        applicationRepository.deleteById(id);
-        log.info("Application deleted: {}", id);
-    }
-
-    @Transactional
-    public ApplicationCreatedResponse rotateAppSecret(Long id) {
-        Application app = applicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Application not found: " + id));
-
-        // Domain entity handles secret rotation
-        app.rotateSecret();
-        app = applicationRepository.save(app);
-        log.info("Application secret rotated for: {}", app.getAppId());
-
-        return toCreatedResponse(app);
-    }
-
-    @Transactional
-    @AuditLog(value = AuditEventType.APPLICATION_ACTIVATED, resourceType = "application", action = "激活应用 ID=#{#id}")
-    public void activateApplication(Long id) {
-        Application app = applicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Application not found: " + id));
-        app.activate();
-        applicationRepository.save(app);
-        log.info("Application {} activated", app.getAppId());
-    }
-
-    @Transactional
-    public void deactivateApplication(Long id) {
-        Application app = applicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Application not found: " + id));
-        app.deactivate();
-        applicationRepository.save(app);
-        log.info("Application {} deactivated", app.getAppId());
-    }
-
-    @Transactional
-    @AuditLog(value = AuditEventType.APPLICATION_BLOCKED, resourceType = "application", action = "封禁应用 ID=#{#id}")
-    public void blockApplication(Long id) {
-        Application app = applicationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Application not found: " + id));
-        app.block();
-        applicationRepository.save(app);
-        log.info("Application {} blocked", app.getAppId());
-    }
-
-    // === Application Permission Management ===
-
-    @Transactional
-    public ApplicationPermissionResponse createPermission(Long applicationId,
-            CreateApplicationPermissionRequest request) {
-        if (!applicationRepository.findById(applicationId).isPresent()) {
-            throw new RuntimeException("Application not found: " + applicationId);
+        public ApplicationResponse getApplicationByAppId(String appId) {
+                Application app = applicationRepository.findByAppId(appId).orElseThrow(
+                                () -> new RuntimeException("Application not found: " + appId));
+                return toResponse(app);
         }
 
-        PermissionAction action = PermissionAction.valueOf(request.getAction().toUpperCase());
-        ApplicationPermission permission = ApplicationPermission.create(applicationId,
-                request.getResourceType(), action, request.getPermissionName(),
-                request.getDescription());
-
-        permission = permissionRepository.save(permission);
-        log.info("Permission created: {} for application {}", permission.getPermissionCode(),
-                applicationId);
-        return toPermissionResponse(permission);
-    }
-
-    public List<ApplicationPermissionResponse> getPermissionsByApplicationId(Long applicationId) {
-        return permissionRepository.findByApplicationId(applicationId).stream()
-                .map(this::toPermissionResponse).collect(Collectors.toList());
-    }
-
-    @Transactional
-    public void deletePermission(Long permissionId) {
-        if (!permissionRepository.findById(permissionId).isPresent()) {
-            throw new RuntimeException("Permission not found: " + permissionId);
+        public List<ApplicationResponse> getApplicationsByTenantId(Long tenantId) {
+                return applicationRepository.findByTenantId(tenantId).stream().map(this::toResponse)
+                                .collect(Collectors.toList());
         }
-        permissionRepository.deleteById(permissionId);
-        log.info("Permission deleted: {}", permissionId);
-    }
 
-    // === DTO Converters ===
+        public List<ApplicationResponse> listAllApplications() {
+                return applicationRepository.findAll().stream().map(this::toResponse)
+                                .collect(Collectors.toList());
+        }
 
-    private ApplicationCreatedResponse toCreatedResponse(Application app) {
-        return ApplicationCreatedResponse.builder().id(app.getId()).appId(app.getAppId())
-                .appSecret(app.getAppSecret()).appName(app.getAppName()).tenantId(app.getTenantId())
-                .appType(app.getAppType() != null ? app.getAppType().name() : null)
-                .description(app.getDescription()).logoUrl(app.getLogoUrl())
-                .status(app.getStatus() != null ? app.getStatus().name() : null)
-                .homePageUrl(app.getHomePageUrl()).callbackUrls(List.copyOf(app.getCallbackUrls()))
-                .postLogoutRedirectUris(List.copyOf(app.getPostLogoutRedirectUris()))
-                .allowedScopes(List.copyOf(app.getAllowedScopes()))
-                .requirePkce(app.isRequireProofKey())
-                .requireAuthorizationConsent(app.isRequireAuthorizationConsent())
-                .enabled(app.isEnabled()).createdAt(app.getCreatedAt())
-                .updatedAt(app.getUpdatedAt()).build();
-    }
+        @Transactional
+        @AuditLog(value = AuditEventType.APPLICATION_UPDATED, resourceType = "application",
+                        action = "更新应用 ID=#{#id}")
+        public ApplicationResponse updateApplication(Long id, UpdateApplicationRequest request) {
+                Application app = applicationRepository.findById(id).orElseThrow(
+                                () -> new RuntimeException("Application not found: " + id));
 
-    private ApplicationResponse toResponse(Application app) {
-        return ApplicationResponse.builder().id(app.getId()).appId(app.getAppId())
-                .appName(app.getAppName()).tenantId(app.getTenantId())
-                .appType(app.getAppType() != null ? app.getAppType().name() : null)
-                .description(app.getDescription()).logoUrl(app.getLogoUrl())
-                .status(app.getStatus() != null ? app.getStatus().name() : null)
-                .homePageUrl(app.getHomePageUrl()).callbackUrls(List.copyOf(app.getCallbackUrls()))
-                .postLogoutRedirectUris(List.copyOf(app.getPostLogoutRedirectUris()))
-                .allowedScopes(List.copyOf(app.getAllowedScopes()))
-                .requirePkce(app.isRequireProofKey())
-                .requireAuthorizationConsent(app.isRequireAuthorizationConsent())
-                .enabled(app.isEnabled()).createdAt(app.getCreatedAt())
-                .updatedAt(app.getUpdatedAt()).build();
-    }
+                // Delegate to domain behavior methods
+                app.updateMetadata(request.getAppName(), request.getDescription(),
+                                request.getLogoUrl(), request.getHomePageUrl());
 
-    private ApplicationPermissionResponse toPermissionResponse(ApplicationPermission permission) {
-        return ApplicationPermissionResponse.builder().id(permission.getId())
-                .applicationId(permission.getApplicationId())
-                .permissionCode(permission.getPermissionCode())
-                .permissionName(permission.getPermissionName())
-                .resourceType(permission.getResourceType())
-                .action(permission.getAction() != null ? permission.getAction().name() : null)
-                .description(permission.getDescription()).createdAt(permission.getCreatedAt())
-                .updatedAt(permission.getUpdatedAt()).build();
-    }
+                if (request.getCallbackUrls() != null || request.getPostLogoutRedirectUris() != null
+                                || request.getAllowedScopes() != null
+                                || request.getRequirePkce() != null
+                                || request.getRequireAuthorizationConsent() != null) {
+                        app.updateOAuthSettings(
+                                        request.getCallbackUrls() != null
+                                                        ? new HashSet<>(request.getCallbackUrls())
+                                                        : null,
+                                        request.getPostLogoutRedirectUris() != null ? new HashSet<>(
+                                                        request.getPostLogoutRedirectUris()) : null,
+                                        request.getAllowedScopes() != null
+                                                        ? new HashSet<>(request.getAllowedScopes())
+                                                        : null,
+                                        request.getRequirePkce() != null ? request.getRequirePkce()
+                                                        : app.isRequireProofKey(),
+                                        request.getRequireAuthorizationConsent() != null
+                                                        ? request.getRequireAuthorizationConsent()
+                                                        : app.isRequireAuthorizationConsent());
+                }
+
+                if (request.getAccessTokenTtlSeconds() != null
+                                || request.getRefreshTokenTtlSeconds() != null) {
+                        TokenSettings newSettings = TokenSettings.of(
+                                        request.getAccessTokenTtlSeconds() != null
+                                                        ? request.getAccessTokenTtlSeconds()
+                                                        : app.getAccessTokenTtlSeconds(),
+                                        request.getRefreshTokenTtlSeconds() != null
+                                                        ? request.getRefreshTokenTtlSeconds()
+                                                        : app.getRefreshTokenTtlSeconds());
+                        app.updateTokenSettings(newSettings);
+                }
+
+                app = applicationRepository.save(app);
+                log.info("Application updated: {}", app.getAppId());
+                return toResponse(app);
+        }
+
+        @Transactional
+        @AuditLog(value = AuditEventType.APPLICATION_DELETED, resourceType = "application",
+                        action = "删除应用 ID=#{#id}")
+        public void deleteApplication(Long id) {
+                if (!applicationRepository.findById(id).isPresent()) {
+                        throw new RuntimeException("Application not found: " + id);
+                }
+                applicationRepository.deleteById(id);
+                log.info("Application deleted: {}", id);
+        }
+
+        @Transactional
+        public ApplicationCreatedResponse rotateAppSecret(Long id) {
+                Application app = applicationRepository.findById(id).orElseThrow(
+                                () -> new RuntimeException("Application not found: " + id));
+
+                // Domain entity handles secret rotation
+                app.rotateSecret();
+                app = applicationRepository.save(app);
+                log.info("Application secret rotated for: {}", app.getAppId());
+
+                return toCreatedResponse(app);
+        }
+
+        @Transactional
+        @AuditLog(value = AuditEventType.APPLICATION_ACTIVATED, resourceType = "application",
+                        action = "激活应用 ID=#{#id}")
+        public void activateApplication(Long id) {
+                Application app = applicationRepository.findById(id).orElseThrow(
+                                () -> new RuntimeException("Application not found: " + id));
+                app.activate();
+                applicationRepository.save(app);
+                log.info("Application {} activated", app.getAppId());
+        }
+
+        @Transactional
+        public void deactivateApplication(Long id) {
+                Application app = applicationRepository.findById(id).orElseThrow(
+                                () -> new RuntimeException("Application not found: " + id));
+                app.deactivate();
+                applicationRepository.save(app);
+                log.info("Application {} deactivated", app.getAppId());
+        }
+
+        @Transactional
+        @AuditLog(value = AuditEventType.APPLICATION_BLOCKED, resourceType = "application",
+                        action = "封禁应用 ID=#{#id}")
+        public void blockApplication(Long id) {
+                Application app = applicationRepository.findById(id).orElseThrow(
+                                () -> new RuntimeException("Application not found: " + id));
+                app.block();
+                applicationRepository.save(app);
+                log.info("Application {} blocked", app.getAppId());
+        }
+
+        // === Application Permission Management ===
+
+        @Transactional
+        public ApplicationPermissionResponse createPermission(Long applicationId,
+                        CreateApplicationPermissionRequest request) {
+                if (!applicationRepository.findById(applicationId).isPresent()) {
+                        throw new RuntimeException("Application not found: " + applicationId);
+                }
+
+                if (request.getAction() == null || request.getAction().isBlank()) {
+                        throw new IllegalArgumentException("Action cannot be blank");
+                }
+
+                PermissionAction action;
+                try {
+                        action = PermissionAction.valueOf(request.getAction().toUpperCase());
+                } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException(
+                                        "Invalid permission action: " + request.getAction(), e);
+                }
+                ApplicationPermission permission = ApplicationPermission.create(applicationId,
+                                request.getResourceType(), action, request.getPermissionName(),
+                                request.getDescription());
+
+                permission = permissionRepository.save(permission);
+                log.info("Permission created: {} for application {}",
+                                permission.getPermissionCode(), applicationId);
+                return toPermissionResponse(permission);
+        }
+
+        public List<ApplicationPermissionResponse> getPermissionsByApplicationId(
+                        Long applicationId) {
+                return permissionRepository.findByApplicationId(applicationId).stream()
+                                .map(this::toPermissionResponse).collect(Collectors.toList());
+        }
+
+        @Transactional
+        public void deletePermission(Long permissionId) {
+                if (!permissionRepository.findById(permissionId).isPresent()) {
+                        throw new RuntimeException("Permission not found: " + permissionId);
+                }
+                permissionRepository.deleteById(permissionId);
+                log.info("Permission deleted: {}", permissionId);
+        }
+
+        // === DTO Converters ===
+
+        private ApplicationCreatedResponse toCreatedResponse(Application app) {
+                return ApplicationCreatedResponse.builder().id(app.getId()).appId(app.getAppId())
+                                .appSecret(app.getAppSecret()).appName(app.getAppName())
+                                .tenantId(app.getTenantId())
+                                .appType(app.getAppType() != null ? app.getAppType().name() : null)
+                                .description(app.getDescription()).logoUrl(app.getLogoUrl())
+                                .status(app.getStatus() != null ? app.getStatus().name() : null)
+                                .homePageUrl(app.getHomePageUrl())
+                                .callbackUrls(List.copyOf(app.getCallbackUrls()))
+                                .postLogoutRedirectUris(
+                                                List.copyOf(app.getPostLogoutRedirectUris()))
+                                .allowedScopes(List.copyOf(app.getAllowedScopes()))
+                                .requirePkce(app.isRequireProofKey())
+                                .requireAuthorizationConsent(app.isRequireAuthorizationConsent())
+                                .enabled(app.isEnabled()).createdAt(app.getCreatedAt())
+                                .updatedAt(app.getUpdatedAt()).build();
+        }
+
+        private ApplicationResponse toResponse(Application app) {
+                return ApplicationResponse.builder().id(app.getId()).appId(app.getAppId())
+                                .appName(app.getAppName()).tenantId(app.getTenantId())
+                                .appType(app.getAppType() != null ? app.getAppType().name() : null)
+                                .description(app.getDescription()).logoUrl(app.getLogoUrl())
+                                .status(app.getStatus() != null ? app.getStatus().name() : null)
+                                .homePageUrl(app.getHomePageUrl())
+                                .callbackUrls(List.copyOf(app.getCallbackUrls()))
+                                .postLogoutRedirectUris(
+                                                List.copyOf(app.getPostLogoutRedirectUris()))
+                                .allowedScopes(List.copyOf(app.getAllowedScopes()))
+                                .requirePkce(app.isRequireProofKey())
+                                .requireAuthorizationConsent(app.isRequireAuthorizationConsent())
+                                .enabled(app.isEnabled()).createdAt(app.getCreatedAt())
+                                .updatedAt(app.getUpdatedAt()).build();
+        }
+
+        private ApplicationPermissionResponse toPermissionResponse(
+                        ApplicationPermission permission) {
+                return ApplicationPermissionResponse.builder().id(permission.getId())
+                                .applicationId(permission.getApplicationId())
+                                .permissionCode(permission.getPermissionCode())
+                                .permissionName(permission.getPermissionName())
+                                .resourceType(permission.getResourceType())
+                                .action(permission.getAction() != null
+                                                ? permission.getAction().name()
+                                                : null)
+                                .description(permission.getDescription())
+                                .createdAt(permission.getCreatedAt())
+                                .updatedAt(permission.getUpdatedAt()).build();
+        }
 }

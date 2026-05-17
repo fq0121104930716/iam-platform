@@ -12,7 +12,7 @@ import iam.platform.common.dto.response.AppStatisticsResponse;
 import iam.platform.common.dto.response.AuditStatisticsResponse;
 import iam.platform.common.dto.response.DashboardOverviewResponse;
 import iam.platform.common.dto.response.TenantOverviewResponse;
-import iam.platform.common.dto.response.PersonStatisticsResponse;
+import iam.platform.common.dto.response.UserStatisticsResponse;
 import iam.platform.admin.application.service.AuditApplicationService;
 import iam.platform.admin.application.service.DashboardApplicationService;
 import iam.platform.common.model.annotation.RequirePermission;
@@ -46,9 +46,9 @@ public class DashboardController {
     @GetMapping("/statistics/persons")
     @Operation(summary = "自然人统计", description = "获取自然人增长和活跃度统计")
     @RequirePermission("dashboard:read")
-    public ApiResponse<PersonStatisticsResponse> getPersonStatistics(
+    public ApiResponse<UserStatisticsResponse> getUserStatistics(
             @RequestParam(required = false) Long tenantId) {
-        return ApiResponse.success(dashboardService.getPersonStatistics(tenantId));
+        return ApiResponse.success(dashboardService.getUserStatistics(tenantId));
     }
 
     @GetMapping("/statistics/apps")

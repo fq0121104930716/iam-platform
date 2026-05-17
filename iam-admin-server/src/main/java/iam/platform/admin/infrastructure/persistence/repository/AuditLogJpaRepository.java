@@ -19,38 +19,38 @@ import java.util.List;
  * Spring Data JPA repository for audit log.
  */
 public interface AuditLogJpaRepository
-        extends JpaRepository<AuditLogPO, Long>, JpaSpecificationExecutor<AuditLogPO> {
+                extends JpaRepository<AuditLogPO, Long>, JpaSpecificationExecutor<AuditLogPO> {
 
-    Page<AuditLogPO> findByTenantId(Long tenantId, Pageable pageable);
+        Page<AuditLogPO> findByTenantId(Long tenantId, Pageable pageable);
 
-    Page<AuditLogPO> findByPersonId(Long personId, Pageable pageable);
+        Page<AuditLogPO> findByUserId(Long userId, Pageable pageable);
 
-    Page<AuditLogPO> findByEventCategory(EventCategory category, Pageable pageable);
+        Page<AuditLogPO> findByEventCategory(EventCategory category, Pageable pageable);
 
-    Page<AuditLogPO> findByEventType(AuditEventType eventType, Pageable pageable);
+        Page<AuditLogPO> findByEventType(AuditEventType eventType, Pageable pageable);
 
-    Page<AuditLogPO> findByResult(AuditResult result, Pageable pageable);
+        Page<AuditLogPO> findByResult(AuditResult result, Pageable pageable);
 
-    Page<AuditLogPO> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end,
-            Pageable pageable);
+        Page<AuditLogPO> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end,
+                        Pageable pageable);
 
-    Page<AuditLogPO> findByResourceTypeAndResourceId(String resourceType, Long resourceId,
-            Pageable pageable);
+        Page<AuditLogPO> findByResourceTypeAndResourceId(String resourceType, Long resourceId,
+                        Pageable pageable);
 
-    @Query("SELECT a.eventCategory, COUNT(a) FROM AuditLogPO a WHERE a.tenantId = :tenantId AND a.createdAt BETWEEN :start AND :end GROUP BY a.eventCategory")
-    List<Object[]> countByEventCategory(@Param("tenantId") Long tenantId,
-            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+        @Query("SELECT a.eventCategory, COUNT(a) FROM AuditLogPO a WHERE a.tenantId = :tenantId AND a.createdAt BETWEEN :start AND :end GROUP BY a.eventCategory")
+        List<Object[]> countByEventCategory(@Param("tenantId") Long tenantId,
+                        @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT a.result, COUNT(a) FROM AuditLogPO a WHERE a.tenantId = :tenantId AND a.createdAt BETWEEN :start AND :end GROUP BY a.result")
-    List<Object[]> countByResult(@Param("tenantId") Long tenantId,
-            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+        @Query("SELECT a.result, COUNT(a) FROM AuditLogPO a WHERE a.tenantId = :tenantId AND a.createdAt BETWEEN :start AND :end GROUP BY a.result")
+        List<Object[]> countByResult(@Param("tenantId") Long tenantId,
+                        @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
-    @Query("SELECT a.eventType, COUNT(a) FROM AuditLogPO a WHERE a.tenantId = :tenantId AND a.createdAt BETWEEN :start AND :end GROUP BY a.eventType ORDER BY COUNT(a) DESC")
-    List<Object[]> findTopEventTypes(@Param("tenantId") Long tenantId,
-            @Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
-            Pageable pageable);
+        @Query("SELECT a.eventType, COUNT(a) FROM AuditLogPO a WHERE a.tenantId = :tenantId AND a.createdAt BETWEEN :start AND :end GROUP BY a.eventType ORDER BY COUNT(a) DESC")
+        List<Object[]> findTopEventTypes(@Param("tenantId") Long tenantId,
+                        @Param("start") LocalDateTime start, @Param("end") LocalDateTime end,
+                        Pageable pageable);
 
-    @Modifying
-    @Query("DELETE FROM AuditLogPO a WHERE a.createdAt < :cutoffDate")
-    int deleteOlderThan(@Param("cutoffDate") LocalDateTime cutoffDate);
+        @Modifying
+        @Query("DELETE FROM AuditLogPO a WHERE a.createdAt < :cutoffDate")
+        int deleteOlderThan(@Param("cutoffDate") LocalDateTime cutoffDate);
 }

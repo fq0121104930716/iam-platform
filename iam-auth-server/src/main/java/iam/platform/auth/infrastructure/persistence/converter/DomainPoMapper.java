@@ -12,7 +12,8 @@ import iam.platform.auth.infrastructure.persistence.entity.TenantPO;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedSourcePolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedSourcePolicy = ReportingPolicy.IGNORE,
+                unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface DomainPoMapper {
 
         // ==================== Tenant Conversions ====================
