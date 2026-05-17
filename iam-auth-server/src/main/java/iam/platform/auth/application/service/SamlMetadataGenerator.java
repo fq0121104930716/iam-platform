@@ -26,6 +26,12 @@ public class SamlMetadataGenerator {
         private final XMLObjectBuilderFactory builderFactory =
                         XMLObjectProviderRegistrySupport.getBuilderFactory();
 
+        @SuppressWarnings("unchecked")
+        private <T extends org.opensaml.saml.common.SAMLObject> SAMLObjectBuilder<T> getBuilder(
+                        javax.xml.namespace.QName elementName) {
+                return (SAMLObjectBuilder<T>) builderFactory.getBuilder(elementName);
+        }
+
         /**
          * Generate SAML 2.0 IdP metadata XML.
          *
@@ -37,8 +43,7 @@ public class SamlMetadataGenerator {
 
                 // Create EntityDescriptor
                 SAMLObjectBuilder<EntityDescriptor> entityDescriptorBuilder =
-                                (SAMLObjectBuilder<EntityDescriptor>) builderFactory
-                                                .getBuilder(EntityDescriptor.DEFAULT_ELEMENT_NAME);
+                                getBuilder(EntityDescriptor.DEFAULT_ELEMENT_NAME);
                 EntityDescriptor entityDescriptor = entityDescriptorBuilder.buildObject();
                 entityDescriptor.setEntityID(samlProperties.getEntityId());
                 entityDescriptor.setID("_" + java.util.UUID.randomUUID().toString());
@@ -49,8 +54,7 @@ public class SamlMetadataGenerator {
 
                 // Create IDPSSODescriptor
                 SAMLObjectBuilder<IDPSSODescriptor> idpDescriptorBuilder =
-                                (SAMLObjectBuilder<IDPSSODescriptor>) builderFactory
-                                                .getBuilder(IDPSSODescriptor.DEFAULT_ELEMENT_NAME);
+                                getBuilder(IDPSSODescriptor.DEFAULT_ELEMENT_NAME);
                 IDPSSODescriptor idpDescriptor = idpDescriptorBuilder.buildObject();
                 idpDescriptor.setWantAuthnRequestsSigned(samlProperties.isSignAssertions());
 
@@ -101,10 +105,9 @@ public class SamlMetadataGenerator {
          */
         private NameIDFormat buildNameIDFormat(String format) {
                 SAMLObjectBuilder<NameIDFormat> builder =
-                                (SAMLObjectBuilder<NameIDFormat>) builderFactory
-                                                .getBuilder(NameIDFormat.DEFAULT_ELEMENT_NAME);
+                                getBuilder(NameIDFormat.DEFAULT_ELEMENT_NAME);
                 NameIDFormat nameIDFormat = builder.buildObject();
-                nameIDFormat.setFormat(format);
+                nameIDFormat.setURI(format);
                 return nameIDFormat;
         }
 
@@ -113,8 +116,7 @@ public class SamlMetadataGenerator {
          */
         private SingleSignOnService buildSingleSignOnService(String binding, String location) {
                 SAMLObjectBuilder<SingleSignOnService> builder =
-                                (SAMLObjectBuilder<SingleSignOnService>) builderFactory.getBuilder(
-                                                SingleSignOnService.DEFAULT_ELEMENT_NAME);
+                                getBuilder(SingleSignOnService.DEFAULT_ELEMENT_NAME);
                 SingleSignOnService ssoService = builder.buildObject();
                 ssoService.setBinding(binding);
                 ssoService.setLocation(location);

@@ -1,19 +1,26 @@
 version: '3.8'
 
 services:
-  # Nacos - Service Registry
+  # Nacos - Service Registry & Config Center
   nacos:
     image: nacos/nacos-server:v2.3.2
-    container_name: iam-nacos
+    container_name: nacos
     environment:
       - MODE=standalone
-      - JVM_XMS=512m
-      - JVM_XMX=512m
+      - PREFER_HOST_MODE=ip
+      - NACOS_USER=nacos
+      - JVM_XMS=1g
+      - JVM_XMX=1g
+      - JVM_XMN=512m
+      - JVM_MS=128m
+      - JVM_MMS=320m
+      - TIME_ZONE=Asia/Shanghai
     ports:
       - "8848:8848"
       - "9848:9848"
     networks:
       - iam-network
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8848/nacos/v1/cs/ops/website" ]
       interval: 10s
@@ -22,167 +29,120 @@ services:
 
   # PostgreSQL - Database
   postgres:
-    image: postgres:16-alpine
-    container_name: iam-postgres
+    image: dhi.io/postgres:18-alpine3.23-dev
+    container_name: postgres
     environment:
-      - POSTGRES_DB=sso_oidc
-      - POSTGRES_USER=dev_default
-      - POSTGRES_PASSWORD=pwd123456
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=STPass123!
+      - PGDATA=/var/lib/postgresql/18/data
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - F:\linux\docker\postgres\data:/var/lib/postgresql/data
     networks:
       - iam-network
+    restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U dev_default" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Redis - Cache, Session, Rate Limiting
+  # Redis - Cache & Session Store
   redis:
-    image: redis:7-alpine
-    container_name: iam-redis
-    command: redis-server --requirepass iam59!z$
+    image: redis:8.6
+    container_name: redis
+    command: redis-server /etc/redis/redis.conf
     ports:
       - "6379:6379"
+    volumes:
+      - F:\linux\docker\redis\redis.conf:/etc/redis/redis.conf
+      - F:\linux\docker\redis\data:/data
     networks:
       - iam-network
+    restart: unless-stopped
     healthcheck:
       test: [ "CMD", "redis-cli", "-a", "iam59!z$", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # Prometheus - Metrics Monitoring
+  prometheus:
+    image: ubuntu/prometheus:3.11-24.04_stable
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - F:\linux\docker\prometheus\prometheus.yml:/etc/prometheus/prometheus.yml
+      - F:\linux\docker\prometheus\data:/prometheus
+    networks:
+      - iam-network
+    restart: unless-stopped
+
   # Zipkin - Distributed Tracing
   zipkin:
-    image: openzipkin/zipkin:latest
-    container_name: iam-zipkin
+    image: openzipkin/zipkin:3
+    container_name: zipkin
     ports:
+      - "9410:9410"
       - "9411:9411"
     networks:
       - iam-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9411/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # IAM Gateway - API Gateway
-  iam-gateway:
-    build:
-      context: ./iam-gateway
-      dockerfile: ../Dockerfile
-    container_name: iam-gateway
-    environment:
-      - NACOS_ADDR=nacos:8848
-      - NACOS_NAMESPACE=iam-platform-dev
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=iam59!z$
-      - GATEWAY_CLIENT_SECRET=gateway-secret
-      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
-      - SPRING_PROFILES_ACTIVE=dev
+  # RocketMQ NameServer
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.3.1
+    container_name: rocketmq-namesrv
     ports:
-      - "8080:8080"
-      - "8081:8081"
-    depends_on:
-      nacos:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - "9876:9876"
+    command: sh mqnamesrv
+    environment:
+      - JAVA_OPT_EXT=-Xms256m -Xmx256m -Xmn128m
+    volumes:
+      - F:\linux\docker\rocketmq\namesrv-logs:/home/rocketmq/logs
     networks:
       - iam-network
+    restart: unless-stopped
 
-  # IAM Auth Service - OAuth2/OIDC Provider
-  iam-auth-service:
-    build:
-      context: ./iam-auth-server
-      dockerfile: ../Dockerfile
-    container_name: iam-auth-service
-    environment:
-      - NACOS_ADDR=nacos:8848
-      - NACOS_NAMESPACE=iam-platform-dev
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=sso_oidc
-      - DB_USERNAME=dev_default
-      - DB_PASSWORD=pwd123456
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=iam59!z$
-      - ENCRYPTION_KEY=oLEwJBQg7EXXZijxJtoXYet4qcxODrqs
-      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
-      - SPRING_PROFILES_ACTIVE=dev
+  # RocketMQ Broker
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.1
+    container_name: rocketmq-broker
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    command: sh mqbroker -c /home/rocketmq/rocketmq-5.3.1/conf/broker.conf
+    environment:
+      - JAVA_OPT_EXT=-Xms256m -Xmx256m -Xmn128m
+    volumes:
+      - F:\linux\docker\rocketmq\broker.conf:/home/rocketmq/rocketmq-5.3.1/conf/broker.conf
+      - F:\linux\docker\rocketmq\broker-logs:/home/rocketmq/logs
+      - F:\linux\docker\rocketmq\broker-store:/home/rocketmq/store
     depends_on:
-      nacos:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - rocketmq-namesrv
     networks:
       - iam-network
+    restart: unless-stopped
 
-  # IAM Admin Service - Management Server
-  iam-admin-service:
-    build:
-      context: ./iam-admin-server
-      dockerfile: ../Dockerfile
-    container_name: iam-admin-service
-    environment:
-      - NACOS_ADDR=nacos:8848
-      - NACOS_NAMESPACE=iam-platform-dev
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=sso_oidc
-      - DB_USERNAME=dev_default
-      - DB_PASSWORD=pwd123456
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=iam59!z$
-      - ENCRYPTION_KEY=oLEwJBQg7EXXZijxJtoXYet4qcxODrqs
-      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
-      - SPRING_PROFILES_ACTIVE=dev
+  # RocketMQ Dashboard (可选管理界面)
+  rocketmq-dashboard:
+    image: apacherocketmq/rocketmq-dashboard:1.0.0
+    container_name: rocketmq-dashboard
     ports:
-      - "9002:9002"
-      - "9003:9003"
-    depends_on:
-      nacos:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - "8088:8080"
+    environment:
+      - JAVA_OPTS=-Drocketmq.namesrv.addr=rocketmq-namesrv:9876 -Dcom.rocketmq.sendMessageWithVIP=false
     networks:
       - iam-network
-
-  # IAM BFF Service - Backend for Frontend
-  iam-bff-service:
-    build:
-      context: ./iam-bff-server
-      dockerfile: ../Dockerfile
-    container_name: iam-bff-service
-    environment:
-      - NACOS_ADDR=nacos:8848
-      - NACOS_NAMESPACE=iam-platform-dev
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=iam59!z$
-      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
-      - SPRING_PROFILES_ACTIVE=dev
-    ports:
-      - "9010:9010"
-      - "9011:9011"
-    depends_on:
-      nacos:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - iam-network
-
-volumes:
-  postgres-data:
+    restart: unless-stopped
 
 networks:
   iam-network:

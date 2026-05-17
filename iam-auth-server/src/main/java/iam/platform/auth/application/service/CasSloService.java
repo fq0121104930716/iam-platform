@@ -26,7 +26,6 @@ public class CasSloService {
     private final StringRedisTemplate stringRedisTemplate;
     private final CasProperties casProperties;
 
-    private static final String SESSION_KEY_PREFIX = "auth:cas:session:";
     private static final String SERVICE_KEY_PREFIX = "auth:cas:session:services:";
     private static final String LOGOUT_KEY_PREFIX = "auth:cas:logout:";
 
