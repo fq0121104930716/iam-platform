@@ -35,6 +35,7 @@
         <testcontainers.version>1.19.7</testcontainers.version>
         <spring-cloud.version>2023.0.1</spring-cloud.version>
         <spring-cloud-alibaba.version>2023.0.1.0</spring-cloud-alibaba.version>
+        <opensaml.version>4.3.2</opensaml.version>
         <!-- Docker image version, can be overridden via -Ddocker.image.version=1.2.3 -->
         <docker.image.version>${project.version}</docker.image.version>
     </properties>
@@ -99,6 +100,23 @@
                 <artifactId>postgresql</artifactId>
                 <version>${testcontainers.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- OpenSAML for SAML 2.0 support -->
+            <dependency>
+                <groupId>org.opensaml</groupId>
+                <artifactId>opensaml-core</artifactId>
+                <version>${opensaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.opensaml</groupId>
+                <artifactId>opensaml-saml-api</artifactId>
+                <version>${opensaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.opensaml</groupId>
+                <artifactId>opensaml-saml-impl</artifactId>
+                <version>${opensaml.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -196,4 +214,13 @@
             </properties>
         </profile>
     </profiles>
+
+    <repositories>
+        <!-- Shibboleth repository for OpenSAML -->
+        <repository>
+            <id>shibboleth</id>
+            <name>Shibboleth Maven Repository</name>
+            <url>https://build.shibboleth.net/maven/releases</url>
+        </repository>
+    </repositories>
 </project>

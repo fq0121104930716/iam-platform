@@ -1,5 +1,11 @@
 server:
   port: 8080
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${SSL_KEY_STORE:file:${user.dir}/ssl/keystore.p12}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD:changeit}
+    key-store-type: PKCS12
+    key-alias: mycert
 
 spring:
   application:
@@ -73,7 +79,7 @@ spring:
             scope: openid,profile,email
         provider:
           gateway-sso:
-            issuer-uri: http://localhost:9000
+            issuer-uri: https://localhost:9000
 
   data:
     redis:
@@ -82,7 +88,7 @@ spring:
       password: ${REDIS_PASSWORD:iam59!z$}
 
 # OAuth2 Resource Server配置
-  security.oauth2.resourceserver.jwt.issuer-uri: http://localhost:9000
+  security.oauth2.resourceserver.jwt.issuer-uri: https://localhost:9000
 
 management:
   server:

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import iam.platform.auth.application.service.CasTicketService;
+import iam.platform.auth.application.service.CasSloService;
 import iam.platform.auth.domain.model.entity.Person;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
@@ -33,6 +34,7 @@ import java.util.Set;
 public class CasController {
 
     private final CasTicketService casTicketService;
+    private final CasSloService casSloService;
     private final PersonRepository personRepository;
 
     /**
@@ -91,7 +93,12 @@ public class CasController {
         // 4. Generate Service Ticket
         String ticket = casTicketService.createServiceTicket(authResult, service);
 
-        // 5. Redirect to service?ticket=ST-xxx
+        // 5. Register service for SLO (track this service in the session)
+        String sessionId = request.getSession().getId();
+        casSloService.registerServiceForSession(sessionId, service);
+        log.debug("Service {} registered for SLO session {}", service, sessionId);
+
+        // 6. Redirect to service?ticket=ST-xxx
         String redirectUrl = service + (service.contains("?") ? "&" : "?") + "ticket=" + ticket;
         response.sendRedirect(redirectUrl);
 
@@ -142,26 +149,12 @@ public class CasController {
     }
 
     /**
-     * CAS logout endpoint. GET /cas/logout
-     */
-    @GetMapping("/logout")
-    public String casLogout(HttpServletRequest request) {
-        // Invalidate session
-        if (request.getSession(false) != null) {
-            request.getSession().invalidate();
-        }
-
-        log.info("CAS logout completed");
-        return "redirect:/cas/login";
-    }
-
-    /**
      * CAS health check endpoint. GET /cas/health
      */
     @GetMapping("/health")
     @ResponseBody
     public ResponseEntity<Map<String, String>> casHealth() {
-        return ResponseEntity.ok(Map.of("status", "UP", "protocol", "CAS 3.0"));
+        return ResponseEntity.ok(Map.of("status", "UP", "protocol", "CAS 3.0", "slo", "enabled"));
     }
 
     /**

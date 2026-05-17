@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAS Single Logout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .logout-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logout-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .logout-icon::after {
+            content: '✓';
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .progress-section {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            animation: progress 2s ease-in-out infinite;
+        }
+
+        @keyframes progress {
+            0% {
+                width: 0%;
+            }
+
+            50% {
+                width: 100%;
+            }
+
+            100% {
+                width: 0%;
+            }
+        }
+
+        .status-text {
+            color: #4a5568;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .service-list {
+            text-align: left;
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .service-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f7fafc;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+        }
+
+        .service-item::before {
+            content: '•';
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .redirect-info {
+            background: #ebf8ff;
+            border-left: 4px solid #4299e1;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+
+        .redirect-info p {
+            color: #2c5282;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #a0aec0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="logout-container">
+        <div class="logout-icon"></div>
+        <h1>Signing Out</h1>
+        <p class="subtitle">CAS Single Logout in Progress</p>
+
+        <div class="progress-section">
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <p class="status-text">
+                <span class="spinner"></span>
+                Logging out from <strong th:text="${services.size()}">0</strong> service(s)...
+            </p>
+
+            <div class="service-list">
+                <p style="color: #718096; font-size: 12px; margin-bottom: 10px; font-weight: 600;">Services being logged
+                    out:</p>
+                <div th:each="service : ${services}" class="service-item" th:text="${service}">
+                    https://app.example.com
+                </div>
+            </div>
+        </div>
+
+        <div class="redirect-info" th:if="${service}">
+            <p><strong>Redirecting to:</strong></p>
+            <p style="word-break: break-all;" th:text="${service}">https://app.example.com</p>
+        </div>
+
+        <div class="footer">
+            <p>CAS Single Logout Protocol | Session ID: <span th:text="${sessionId}">N/A</span></p>
+        </div>
+
+        <!-- Hidden iframe for Front Channel Logout -->
+        <div th:each="service, iterStat : ${services}" style="display: none;">
+            <iframe th:src="${service} + (service.contains('?') ? '&' : '?') + 'logoutRequest=' + ${sessionId}"
+                th:id="'logout-frame-' + ${iterStat.index}" onload="serviceLoggedOut(this)"
+                onerror="serviceLoggedOut(this)">
+            </iframe>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        let loggedOutCount = 0;
+        const totalServices = /*[[${services.size()}]]*/ 0;
+        const finalService = /*[[${service}]]*/ null;
+
+        function serviceLoggedOut(iframe) {
+            loggedOutCount++;
+            console.log('Service logged out: ' + iframe.src);
+
+            if (loggedOutCount >= totalServices) {
+                console.log('All services logged out, redirecting...');
+                setTimeout(function () {
+                    if (finalService) {
+                        window.location.href = finalService;
+                    } else {
+                        window.location.href = '/cas/login?logout=true';
+                    }
+                }, 1000);
+            }
+        }
+
+        // Fallback timeout - redirect after 10 seconds even if not all services responded
+        setTimeout(function () {
+            console.log('Logout timeout, redirecting...');
+            if (finalService) {
+                window.location.href = finalService;
+            } else {
+                window.location.href = '/cas/login?logout=true';
+            }
+        }, 10000);
+
+        console.log('CAS Front Channel Logout initiated for ' + totalServices + ' services');
+    </script>
+</body>
+
+</html>

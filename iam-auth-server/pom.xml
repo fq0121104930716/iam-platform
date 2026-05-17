@@ -78,6 +78,20 @@
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
 
+        <!-- OpenSAML for SAML 2.0 support -->
+        <dependency>
+            <groupId>org.opensaml</groupId>
+            <artifactId>opensaml-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.opensaml</groupId>
+            <artifactId>opensaml-saml-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.opensaml</groupId>
+            <artifactId>opensaml-saml-impl</artifactId>
+        </dependency>
+
         <!-- Spring Security CAS (required for Jackson2 module initialization) -->
         <dependency>
             <groupId>org.springframework.security</groupId>

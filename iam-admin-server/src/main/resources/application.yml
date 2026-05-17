@@ -1,5 +1,11 @@
 server:
   port: 9002
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${SSL_KEY_STORE:file:${user.dir}/ssl/keystore.p12}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD:changeit}
+    key-store-type: PKCS12
+    key-alias: mycert
 
 spring:
   application:
@@ -55,7 +61,7 @@ spring:
             client-name: SSO Auth Server
         provider:
           sso:
-            issuer-uri: ${OIDC_ISSUER_URI:http://localhost:9000}
+            issuer-uri: ${OIDC_ISSUER_URI:https://localhost:9000}
 
 security:
   encryption:

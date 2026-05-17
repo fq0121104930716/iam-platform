@@ -29,4 +29,16 @@ public class CasProperties {
 
     /** CAS login URL */
     private String loginUrl = "https://sso.example.com/cas/login";
+
+    /** Whether to enable Front Channel Logout */
+    private boolean frontChannelLogoutEnabled = true;
+
+    /** Whether to enable Back Channel Logout */
+    private boolean backChannelLogoutEnabled = true;
+
+    /** Logout request TTL in seconds */
+    private int logoutRequestTtlSeconds = 300;
+
+    /** Whether to send logout request to all services */
+    private boolean sendLogoutToAllServices = true;
 }

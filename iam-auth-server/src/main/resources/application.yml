@@ -1,5 +1,11 @@
 ﻿server:
   port: 9000
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${SSL_KEY_STORE:file:${user.dir}/ssl/keystore.p12}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD:changeit}
+    key-store-type: PKCS12
+    key-alias: mycert
 
 spring:
   application:
@@ -75,11 +81,11 @@ verification-code:
 security:
   jwk:
     rsa:
-      private-key-location: ${JWK_RSA_PRIVATE_KEY:classpath:keys/private.pem}
-      public-key-location: ${JWK_RSA_PUBLIC_KEY:classpath:keys/public.pem}
+      private-key-location: ${JWK_RSA_PRIVATE_KEY:file:${user.dir}/ssl/private.key}
+      public-key-location: ${JWK_RSA_PUBLIC_KEY:file:${user.dir}/ssl/certificate.crt}
   encryption:
     key: ${ENCRYPTION_KEY:}
-  issuer-uri: ${OIDC_ISSUER_URI:http://localhost:9000}
+  issuer-uri: ${OIDC_ISSUER_URI:https://localhost:9000}
 
 # Security policy configuration
 sso:
@@ -105,6 +111,19 @@ sso:
     user-search-base: ${LDAP_USER_SEARCH_BASE:OU=Users}
     user-search-filter: ${LDAP_USER_SEARCH_FILTER:(sAMAccountName={0})}
     use-ssl: ${LDAP_USE_SSL:false}
+
+  # CAS (Central Authentication Service) configuration
+  cas:
+    server-url: ${CAS_SERVER_URL:https://localhost:9000/cas}
+    ticket-validity-seconds: ${CAS_TICKET_VALIDITY:600}
+    ticket-prefix: ${CAS_TICKET_PREFIX:ST}
+    single-sign-out-enabled: ${CAS_SLO_ENABLED:true}
+    logout-url: ${CAS_LOGOUT_URL:https://localhost:9000/cas/logout}
+    login-url: ${CAS_LOGIN_URL:https://localhost:9000/cas/login}
+    front-channel-logout-enabled: ${CAS_FRONT_CHANNEL_LOGOUT:true}
+    back-channel-logout-enabled: ${CAS_BACK_CHANNEL_LOGOUT:true}
+    logout-request-ttl-seconds: ${CAS_LOGOUT_TTL:300}
+    send-logout-to-all-services: ${CAS_LOGOUT_ALL_SERVICES:true}
 
 management:
   server:

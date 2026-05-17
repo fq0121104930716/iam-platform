@@ -4,13 +4,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import iam.platform.auth.application.service.SamlAssertionBuilder;
+import iam.platform.auth.application.service.SamlMetadataGenerator;
 import iam.platform.auth.domain.model.entity.Person;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
@@ -29,6 +32,7 @@ import java.util.Set;
 public class SamlSsoController {
 
     private final SamlAssertionBuilder assertionBuilder;
+    private final SamlMetadataGenerator metadataGenerator;
     private final PersonRepository personRepository;
 
     /**
@@ -91,12 +95,11 @@ public class SamlSsoController {
     /**
      * SAML Metadata endpoint - provides IdP metadata for SP configuration. GET /saml/metadata
      */
-    @GetMapping("/metadata")
-    public String samlMetadata(Model model) {
-        // TODO: Implement SAML metadata generation
-        model.addAttribute("entityId", "https://sso.example.com/saml/metadata");
-        model.addAttribute("ssoUrl", "https://sso.example.com/saml/sso");
-        return "saml-metadata";
+    @GetMapping(value = "/metadata", produces = MediaType.APPLICATION_XML_VALUE)
+    @ResponseBody
+    public String samlMetadata() {
+        log.info("SAML metadata requested");
+        return metadataGenerator.generateMetadata();
     }
 
     /**
