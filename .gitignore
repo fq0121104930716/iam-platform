@@ -88,6 +88,14 @@ docker-compose.override.yml
 # RSA keys (production keys must not be committed)
 src/main/resources/keys/*.pem
 
+# SSL certificates (keep only public certs, exclude private keys and keystores)
+ssl/*.key
+ssl/*.p12
+ssl/*.jks
+!ssl/*.crt
+!ssl/*.cer
+!ssl/README.md
+
 # Qoder - 精细化提交策略（必须用通配符逐层打开，否则取反不生效）
 .qoder/*
 !.qoder/rules
