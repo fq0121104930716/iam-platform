@@ -1,0 +1,47 @@
+server:
+  port: 9010
+
+spring:
+  application:
+    name: iam-bff-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# Feign client configuration
+spring.cloud.openfeign:
+  client:
+    config:
+      default:
+        connectTimeout: 1000
+        readTimeout: 3000
+
+management:
+  server:
+    port: 9011
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://host.docker.internal:9411/api/v2/spans}
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  level:
+    root: INFO
+    iam.platform.bff: INFO

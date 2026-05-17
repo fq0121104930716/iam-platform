@@ -12,6 +12,7 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -65,9 +66,29 @@ public class GatewaySecurityConfig {
     @Order(3)
     public SecurityWebFilterChain defaultFilterChain(ServerHttpSecurity http) {
         return http
-                .securityMatcher(ServerWebExchangeMatchers.pathMatchers("/auth/**", "/static/**", "/favicon.ico", "/error",
+                .securityMatcher(ServerWebExchangeMatchers.pathMatchers("/auth/**", "/bff/css/**", "/bff/js/**", "/bff/static/**", "/static/**", "/favicon.ico", "/error",
                         "/actuator/**", "/.well-known/**", "/oauth2/jwks"))
                 .authorizeExchange(exchanges -> exchanges.anyExchange().permitAll())
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .build();
+    }
+
+    /**
+     * 链4 - BFF专用链 (@Order(4)) - 处理BFF路径的认证
+     * 未认证的BFF请求重定向到 /bff/login
+     */
+    @Bean
+    @Order(4)
+    public SecurityWebFilterChain bffFilterChain(ServerHttpSecurity http) {
+        return http
+                .securityMatcher(ServerWebExchangeMatchers.pathMatchers("/bff/**"))
+                .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers("/bff/login", "/bff/register", "/bff/consent",
+                                "/bff/select-tenant", "/bff/css/**", "/bff/js/**", "/bff/static/**", "/bff/api/code/**")
+                        .permitAll()
+                        .anyExchange().authenticated())
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(new RedirectServerAuthenticationEntryPoint("/bff/login")))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .build();
     }

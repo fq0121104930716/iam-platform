@@ -156,6 +156,26 @@ services:
     networks:
       - iam-network
 
+  # IAM BFF Server - Backend for Frontend
+  iam-bff-service:
+    build:
+      context: ./iam-bff-server
+      dockerfile: ../Dockerfile
+    container_name: iam-bff-service
+    environment:
+      - NACOS_ADDR=nacos:8848
+      - NACOS_NAMESPACE=iam-platform-dev
+      - ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "9010:9010"
+      - "9011:9011"
+    depends_on:
+      nacos:
+        condition: service_healthy
+    networks:
+      - iam-network
+
 volumes:
   postgres-data:
 

@@ -1,0 +1,9 @@
+logging:
+  level:
+    root: INFO
+    iam.platform.bff: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+
+spring:
+  thymeleaf:
+    cache: false

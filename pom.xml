@@ -23,6 +23,7 @@
         <module>iam-auth-server</module>
         <module>iam-admin-server</module>
         <module>iam-gateway</module>
+        <module>iam-bff-server</module>
     </modules>
 
     <properties>
