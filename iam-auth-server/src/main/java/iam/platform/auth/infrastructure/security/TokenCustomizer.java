@@ -9,7 +9,7 @@ import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.entity.TenantAccount;
 import iam.platform.auth.domain.repository.UserRepository;
 import iam.platform.auth.domain.repository.TenantAccountRepository;
-import iam.platform.auth.domain.service.context.TenantContext;
+import iam.platform.common.context.TenantContext;
 
 import java.util.List;
 import java.util.Set;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
 
-    private final UserRepository UserRepository;
+    private final UserRepository userRepository;
     private final TenantAccountRepository tenantAccountRepository;
     private final TenantAccountRoleApplicationService tenantAccountRoleService;
 
@@ -36,7 +36,7 @@ public class TokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext
         String username = context.getPrincipal().getName();
 
         // Find User
-        User user = UserRepository.findByUsername(username).orElse(null);
+        User user = userRepository.findByUsername(username).orElse(null);
         if (user == null) {
             return;
         }

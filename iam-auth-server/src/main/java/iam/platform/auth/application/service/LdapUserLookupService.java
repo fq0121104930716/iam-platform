@@ -22,7 +22,7 @@ import java.util.List;
 public class LdapUserLookupService {
 
     private final LdapTemplate ldapTemplate;
-    private final UserRepository UserRepository;
+    private final UserRepository userRepository;
     private final LdapProperties properties;
 
     /**
@@ -62,11 +62,10 @@ public class LdapUserLookupService {
      */
     public User findOrCreateUserByLdap(String username, String domain) {
         // Try to find existing User by username
-        User user = UserRepository.findByUsername(username).orElse(null);
+        User user = userRepository.findByUsername(username).orElse(null);
 
         if (user != null) {
-            log.debug("Found existing User for LDAP user: {}, userId={}", username,
-                    user.getId());
+            log.debug("Found existing User for LDAP user: {}, userId={}", username, user.getId());
             return user;
         }
 
@@ -74,10 +73,10 @@ public class LdapUserLookupService {
         log.info("Creating new User for LDAP user: {}", username);
         String email = username + "@" + (domain != null ? domain : "ldap.local");
 
-        user = User.builder().username(username).email(email).nickname(username)
-                .enabled(true).accountLocked(false).build();
+        user = User.builder().username(username).email(email).nickname(username).enabled(true)
+                .accountLocked(false).build();
 
-        user = UserRepository.save(user);
+        user = userRepository.save(user);
 
         log.info("Created new User for LDAP user: userId={}", user.getId());
         return user;

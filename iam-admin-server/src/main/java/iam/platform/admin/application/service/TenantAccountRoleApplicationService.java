@@ -19,7 +19,7 @@ import iam.platform.admin.domain.repository.RolePermissionRepository;
 import iam.platform.admin.domain.repository.RoleRepository;
 import iam.platform.admin.domain.repository.TenantAccountRepository;
 import iam.platform.admin.domain.repository.TenantAccountRoleMappingRepository;
-import iam.platform.admin.infrastructure.security.TenantContext;
+import iam.platform.common.context.TenantContext;
 
 import java.time.LocalDateTime;
 import java.util.List;

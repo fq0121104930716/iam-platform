@@ -12,7 +12,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import iam.platform.common.model.annotation.AuditLog;
 import iam.platform.common.model.enums.AuditResult;
-import iam.platform.admin.infrastructure.security.TenantContext;
+import iam.platform.common.context.TenantContext;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

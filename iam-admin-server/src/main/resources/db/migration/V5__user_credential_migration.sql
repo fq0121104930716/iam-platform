@@ -48,6 +48,15 @@ CREATE UNIQUE INDEX uk_user_type_primary ON t_user_credential(user_id, credentia
 -- Step 3: Create updated_at trigger
 -- ============================================================
 
+-- Ensure the update_updated_at_column function exists
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
 CREATE TRIGGER update_t_user_credential_updated_at
     BEFORE UPDATE ON t_user_credential
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -60,7 +69,7 @@ INSERT INTO t_user_credential (user_id, credential_type, credential_value, algor
 SELECT id, 'PASSWORD', password_hash, 'BCRYPT', TRUE, 'ACTIVE', created_at, updated_at, 'migration'
 FROM t_user
 WHERE password_hash IS NOT NULL AND password_hash != ''
-ON CONFLICT DO NOTHING;
+ON CONFLICT (user_id, credential_type) WHERE is_primary = TRUE DO NOTHING;
 
 -- ============================================================
 -- Step 5: Backward compatibility - make password_hash nullable

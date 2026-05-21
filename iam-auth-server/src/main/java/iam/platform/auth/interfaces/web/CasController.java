@@ -35,7 +35,7 @@ public class CasController {
 
     private final CasTicketService casTicketService;
     private final CasSloService casSloService;
-    private final UserRepository UserRepository;
+    private final UserRepository userRepository;
 
     /**
      * CAS login page - displays login form if user is not authenticated. GET
@@ -164,6 +164,6 @@ public class CasController {
     private User authenticateUser(String username, String password) {
         // Simplified: lookup user by username
         // In real implementation, use AuthenticationDispatcher.authenticate()
-        return UserRepository.findByUsername(username).orElse(null);
+        return userRepository.findByUsername(username).orElse(null);
     }
 }

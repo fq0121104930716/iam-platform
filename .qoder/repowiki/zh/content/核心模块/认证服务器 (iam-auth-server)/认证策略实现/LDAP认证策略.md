@@ -6,8 +6,8 @@
 - [LdapProperties.java](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/LdapProperties.java)
 - [application.yml](file://iam-auth-server/src/main/resources/application.yml)
 - [LdapUserLookupService.java](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/LdapUserLookupService.java)
-- [UnifiedAuthenticationFilter.java](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/filter/UnifiedAuthenticationFilter.java)
-- [CompositeAuthenticationProvider.java](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/CompositeAuthenticationProvider.java)
+- [UnifiedAuthenticationFilter.java](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFilter.java)
+- [CompositeAuthenticationProvider.java](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/CompositeAuthenticationProvider.java)
 - [AuthenticationCredentials.java](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/valueobject/AuthenticationCredentials.java)
 - [AuthenticationMethod.java](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/enums/AuthenticationMethod.java)
 </cite>
@@ -60,8 +60,8 @@ AM --> P
 - [LdapProperties.java:1-34](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/LdapProperties.java#L1-L34)
 - [application.yml:104-114](file://iam-auth-server/src/main/resources/application.yml#L104-L114)
 - [LdapUserLookupService.java:1-87](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/LdapUserLookupService.java#L1-L87)
-- [UnifiedAuthenticationFilter.java:1-80](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/filter/UnifiedAuthenticationFilter.java#L1-L80)
-- [CompositeAuthenticationProvider.java:1-75](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/CompositeAuthenticationProvider.java#L1-L75)
+- [UnifiedAuthenticationFilter.java:1-80](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFilter.java#L1-L80)
+- [CompositeAuthenticationProvider.java:1-75](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/CompositeAuthenticationProvider.java#L1-L75)
 - [AuthenticationCredentials.java:1-59](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/valueobject/AuthenticationCredentials.java#L1-L59)
 - [AuthenticationMethod.java:1-9](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/enums/AuthenticationMethod.java#L1-L9)
 
@@ -85,8 +85,8 @@ AM --> P
 - [LdapProperties.java:15-32](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/LdapProperties.java#L15-L32)
 - [LdapUserLookupService.java:31-58](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/LdapUserLookupService.java#L31-L58)
 - [LdapUserLookupService.java:63-85](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/LdapUserLookupService.java#L63-L85)
-- [UnifiedAuthenticationFilter.java:43-62](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/filter/UnifiedAuthenticationFilter.java#L43-L62)
-- [CompositeAuthenticationProvider.java:31-68](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/CompositeAuthenticationProvider.java#L31-L68)
+- [UnifiedAuthenticationFilter.java:43-62](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFilter.java#L43-L62)
+- [CompositeAuthenticationProvider.java:31-68](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/CompositeAuthenticationProvider.java#L31-L68)
 
 ## 架构总览
 LDAP认证在统一认证流程中的位置如下：
@@ -117,8 +117,8 @@ end
 ```
 
 图表来源
-- [UnifiedAuthenticationFilter.java:31-62](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/filter/UnifiedAuthenticationFilter.java#L31-L62)
-- [CompositeAuthenticationProvider.java:31-68](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/CompositeAuthenticationProvider.java#L31-L68)
+- [UnifiedAuthenticationFilter.java:31-62](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFilter.java#L31-L62)
+- [CompositeAuthenticationProvider.java:31-68](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/CompositeAuthenticationProvider.java#L31-L68)
 - [LdapUserLookupService.java:31-58](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/LdapUserLookupService.java#L31-L58)
 - [LdapConfig.java:34-37](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/LdapConfig.java#L34-L37)
 
@@ -205,8 +205,8 @@ AuthenticationCredentials <|.. LdapCredentials
 - [AuthenticationCredentials.java:9-59](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/valueobject/AuthenticationCredentials.java#L9-L59)
 
 章节来源
-- [UnifiedAuthenticationFilter.java:43-62](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/filter/UnifiedAuthenticationFilter.java#L43-L62)
-- [CompositeAuthenticationProvider.java:31-68](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/CompositeAuthenticationProvider.java#L31-L68)
+- [UnifiedAuthenticationFilter.java:43-62](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFilter.java#L43-L62)
+- [CompositeAuthenticationProvider.java:31-68](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/CompositeAuthenticationProvider.java#L31-L68)
 - [AuthenticationMethod.java:6-8](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/enums/AuthenticationMethod.java#L6-L8)
 
 ## 依赖分析
@@ -231,8 +231,8 @@ AM["AuthenticationMethod"] --> P
 - [LdapConfig.java:16-18](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/LdapConfig.java#L16-L18)
 - [LdapConfig.java:21-37](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/LdapConfig.java#L21-L37)
 - [LdapUserLookupService.java:24-26](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/LdapUserLookupService.java#L24-L26)
-- [UnifiedAuthenticationFilter.java:34-37](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/filter/UnifiedAuthenticationFilter.java#L34-L37)
-- [CompositeAuthenticationProvider.java:28-29](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/CompositeAuthenticationProvider.java#L28-L29)
+- [UnifiedAuthenticationFilter.java:34-37](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFilter.java#L34-L37)
+- [CompositeAuthenticationProvider.java:28-29](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/CompositeAuthenticationProvider.java#L28-L29)
 - [AuthenticationCredentials.java:49-57](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/valueobject/AuthenticationCredentials.java#L49-L57)
 - [AuthenticationMethod.java:6-8](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/enums/AuthenticationMethod.java#L6-L8)
 
@@ -240,8 +240,8 @@ AM["AuthenticationMethod"] --> P
 - [LdapConfig.java:1-39](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/LdapConfig.java#L1-L39)
 - [LdapProperties.java:1-34](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/LdapProperties.java#L1-L34)
 - [LdapUserLookupService.java:1-87](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/LdapUserLookupService.java#L1-L87)
-- [UnifiedAuthenticationFilter.java:1-80](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/filter/UnifiedAuthenticationFilter.java#L1-L80)
-- [CompositeAuthenticationProvider.java:1-75](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/CompositeAuthenticationProvider.java#L1-L75)
+- [UnifiedAuthenticationFilter.java:1-80](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFilter.java#L1-L80)
+- [CompositeAuthenticationProvider.java:1-75](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/CompositeAuthenticationProvider.java#L1-L75)
 - [AuthenticationCredentials.java:1-59](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/valueobject/AuthenticationCredentials.java#L1-L59)
 - [AuthenticationMethod.java:1-9](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/enums/AuthenticationMethod.java#L1-L9)
 
@@ -273,7 +273,7 @@ AM["AuthenticationMethod"] --> P
 章节来源
 - [LdapUserLookupService.java:48-57](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/LdapUserLookupService.java#L48-L57)
 - [LdapUserLookupService.java:73-84](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/LdapUserLookupService.java#L73-L84)
-- [CompositeAuthenticationProvider.java:44-67](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/CompositeAuthenticationProvider.java#L44-L67)
+- [CompositeAuthenticationProvider.java:44-67](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/CompositeAuthenticationProvider.java#L44-L67)
 - [application.yml:104-114](file://iam-auth-server/src/main/resources/application.yml#L104-L114)
 
 ## 结论

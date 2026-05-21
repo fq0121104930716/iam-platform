@@ -33,7 +33,7 @@ public class SamlSsoController {
 
     private final SamlAssertionBuilder assertionBuilder;
     private final SamlMetadataGenerator metadataGenerator;
-    private final UserRepository UserRepository;
+    private final UserRepository userRepository;
 
     /**
      * SAML SSO endpoint - displays login page if user is not authenticated. GET
@@ -76,10 +76,10 @@ public class SamlSsoController {
         // 2. Create authentication result
         AuthenticationResult authResult =
                 AuthenticationResult.withSelectedTenant(user, AuthenticationMethod.PASSWORD, null, // No
-                                                                                                     // tenant
-                                                                                                     // selection
-                                                                                                     // for
-                                                                                                     // SAML
+                                                                                                   // tenant
+                                                                                                   // selection
+                                                                                                   // for
+                                                                                                   // SAML
                         List.of(), Set.of());
 
         // 3. Generate SAML Assertion
@@ -109,7 +109,7 @@ public class SamlSsoController {
     private User authenticateUser(String username, String password) {
         // Simplified: lookup user by username
         // In real implementation, use AuthenticationDispatcher.authenticate()
-        return UserRepository.findByUsername(username).orElse(null);
+        return userRepository.findByUsername(username).orElse(null);
     }
 
     /**

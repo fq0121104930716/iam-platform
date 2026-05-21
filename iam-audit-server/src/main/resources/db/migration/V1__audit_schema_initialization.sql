@@ -1,9 +1,21 @@
 -- ============================================================
 -- V1__audit_schema_initialization.sql
--- IAM Audit Server Base Schema
+-- IAM Audit Server Complete Schema
 -- ============================================================
--- This script creates the core audit tables for iam-audit-server
--- Migrated from iam-admin-server V1__complete_schema_initialization.sql
+-- This script creates all audit-related tables for iam-audit-server
+-- Consolidated from:
+-- - iam-admin-server V1__complete_schema_initialization.sql (audit tables)
+-- - iam-admin-server V3__add_audit_log_tracing_fields.sql
+-- - iam-admin-server V4__audit_advanced_features.sql
+-- ============================================================
+-- Changes:
+-- 1. Create t_audit_log table with all fields including tracing
+-- 2. Create t_alert_rule table (alert rule definitions)
+-- 3. Create t_alert_record table (triggered alert records)
+-- 4. Create t_siem_endpoint table (SIEM integration endpoints)
+-- 5. Create t_compliance_report table (compliance report metadata)
+-- 6. Create utility functions (update_updated_at_column, cleanup_old_audit_logs)
+-- 7. Insert default alert rules seed data
 -- ============================================================
 
 -- ============================================================
@@ -65,6 +77,17 @@ COMMENT ON COLUMN t_audit_log.span_id IS 'Span ID for request chain tracing';
 COMMENT ON COLUMN t_audit_log.parent_span_id IS 'Parent span ID for hierarchical tracing';
 COMMENT ON COLUMN t_audit_log.encrypted_fields IS 'JSON array of encrypted field names';
 
+-- Ensure the update_updated_at_column function exists
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+COMMENT ON FUNCTION update_updated_at_column IS 'Trigger function to automatically update updated_at column';
+
 -- ============================================================
 -- Step 2: Create t_alert_rule - Alert rule definitions
 -- ============================================================
@@ -84,6 +107,10 @@ CREATE TABLE IF NOT EXISTS t_alert_rule (
     updated_at              TIMESTAMP NOT NULL DEFAULT NOW(),
     created_by              VARCHAR(100)
 );
+
+CREATE TRIGGER update_t_alert_rule_updated_at
+    BEFORE UPDATE ON t_alert_rule
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE INDEX idx_alert_rule_enabled ON t_alert_rule(enabled);
 

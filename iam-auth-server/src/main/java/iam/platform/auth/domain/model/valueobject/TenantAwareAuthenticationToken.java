@@ -2,7 +2,7 @@ package iam.platform.auth.domain.model.valueobject;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import iam.platform.auth.domain.service.context.TenantContext;
+import iam.platform.common.context.TenantContext;
 
 /**
  * Represents an authentication token that includes tenant context information. This token extends

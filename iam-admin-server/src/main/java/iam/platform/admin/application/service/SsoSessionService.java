@@ -12,7 +12,7 @@ import iam.platform.admin.domain.model.entity.TenantAccount;
 import iam.platform.admin.domain.repository.UserRepository;
 import iam.platform.admin.domain.repository.TenantAccountRepository;
 import iam.platform.admin.domain.repository.TenantRepository;
-import iam.platform.admin.infrastructure.security.TenantContext;
+import iam.platform.common.context.TenantContext;
 
 import java.util.List;
 import java.util.Set;

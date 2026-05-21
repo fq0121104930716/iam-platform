@@ -1,5 +1,6 @@
 package iam.platform.admin.infrastructure.security;
 
+import iam.platform.common.context.TenantContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,13 @@ import java.util.Collections;
 /**
  * JWT User Context Filter - Extracts user context from Gateway headers. Gateway passes user
  * information via X-User-* headers after JWT validation.
+ *
+ * <p>This filter:
+ * <ul>
+ *   <li>Reads tenant context from gateway headers via {@link TenantContext#populateFromHeaders}</li>
+ *   <li>Parses roles and permissions for Spring Security Authentication</li>
+ *   <li>Guarantees ThreadLocal cleanup in finally block</li>
+ * </ul>
  */
 @Slf4j
 @Component
@@ -30,19 +38,16 @@ public class JwtUserContextFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        String userId = request.getHeader("X-User-Id");
+        String userId = request.getHeader(TenantContext.HEADER_USER_ID);
 
         if (userId != null && !userId.isEmpty()) {
             try {
-                // Extract user information from Gateway headers
-                String tenantId = request.getHeader("X-Tenant-Id");
-                String roles = request.getHeader("X-User-Roles");
-                String permissions = request.getHeader("X-User-Permissions");
+                // Populate tenant context from gateway headers
+                TenantContext.populateFromHeaders(request);
 
-                // Set tenant context
-                if (tenantId != null) {
-                    TenantContext.setCurrentTenantId(Long.valueOf(tenantId));
-                }
+                // Extract roles and permissions for Spring Security
+                String roles = request.getHeader(TenantContext.HEADER_USER_ROLES);
+                String permissions = request.getHeader(TenantContext.HEADER_USER_PERMISSIONS);
 
                 // Create Authentication object
                 Collection<GrantedAuthority> authorities = parseAuthorities(roles, permissions);
@@ -51,7 +56,7 @@ public class JwtUserContextFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
                 log.debug("User context established from Gateway headers: userId={}, tenantId={}",
-                        userId, tenantId);
+                        userId, TenantContext.getCurrentTenantId());
             } catch (Exception e) {
                 log.error("Failed to extract user context from Gateway headers: {}",
                         e.getMessage());
@@ -59,7 +64,12 @@ public class JwtUserContextFilter extends OncePerRequestFilter {
             }
         }
 
-        filterChain.doFilter(request, response);
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            // Always clean up to prevent ThreadLocal leaks
+            TenantContext.clear();
+        }
     }
 
     private Collection<GrantedAuthority> parseAuthorities(String roles, String permissions) {

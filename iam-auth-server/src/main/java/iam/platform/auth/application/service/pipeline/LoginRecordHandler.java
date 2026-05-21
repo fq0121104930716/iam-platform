@@ -12,17 +12,15 @@ import iam.platform.auth.domain.repository.UserRepository;
 @RequiredArgsConstructor
 public class LoginRecordHandler implements PostAuthHandler {
 
-    private final UserRepository UserRepository;
+    private final UserRepository userRepository;
 
     @Override
     public void handle(PostAuthContext context) {
         User user = context.getUser();
         // Update login timestamp directly (anemic model)
-        user = user.toBuilder()
-                .lastLoginAt(java.time.LocalDateTime.now())
-                .updatedAt(java.time.LocalDateTime.now())
-                .build();
-        UserRepository.save(user);
+        user = user.toBuilder().lastLoginAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now()).build();
+        userRepository.save(user);
     }
 
     @Override

@@ -17,7 +17,7 @@ import java.time.Duration;
 public class VerificationCodeServiceImpl implements VerificationCodeService {
 
     private final StringRedisTemplate redisTemplate;
-    private final UserRepository UserRepository;
+    private final UserRepository userRepository;
 
     private static final Duration CODE_EXPIRE = Duration.ofMinutes(5);
     private static final int CODE_LENGTH = 6;
@@ -96,11 +96,11 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
 
     @Override
     public User findOrCreateUserByPhone(String phone) {
-        return UserRepository.findByPhone(phone).orElseGet(() -> {
+        return userRepository.findByPhone(phone).orElseGet(() -> {
             User newUser = User.builder().phone(phone)
-                    .username("user_" + phone.substring(phone.length() - 4))
-                    .phoneVerified(true).enabled(true).build();
-            User savedUser = UserRepository.save(newUser);
+                    .username("user_" + phone.substring(phone.length() - 4)).phoneVerified(true)
+                    .enabled(true).build();
+            User savedUser = userRepository.save(newUser);
             log.info("Created new User from SMS login: {}", savedUser.getUsername());
             return savedUser;
         });
@@ -108,11 +108,11 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
 
     @Override
     public User findOrCreateUserByEmail(String email) {
-        return UserRepository.findByEmail(email).orElseGet(() -> {
+        return userRepository.findByEmail(email).orElseGet(() -> {
             String username = email.substring(0, email.indexOf('@'));
-            User newUser = User.builder().email(email).username(username)
-                    .emailVerified(true).enabled(true).build();
-            User savedUser = UserRepository.save(newUser);
+            User newUser = User.builder().email(email).username(username).emailVerified(true)
+                    .enabled(true).build();
+            User savedUser = userRepository.save(newUser);
             log.info("Created new User from Email login: {}", savedUser.getUsername());
             return savedUser;
         });
@@ -123,30 +123,33 @@ public class VerificationCodeServiceImpl implements VerificationCodeService {
     }
 
     /**
-     * Check rate limit for verification code sending.
-     * Prevents abuse by limiting the frequency of code requests.
+     * Check rate limit for verification code sending. Prevents abuse by limiting the frequency of
+     * code requests.
      */
     private void checkRateLimit(String rateLimitKey, String type) {
         // Check if rate limit exists
         Boolean exists = redisTemplate.hasKey(rateLimitKey);
         if (Boolean.TRUE.equals(exists)) {
-            throw new IllegalStateException(type + " verification code can only be sent once per minute");
+            throw new IllegalStateException(
+                    type + " verification code can only be sent once per minute");
         }
 
         // Check daily limit
-        String dailyLimitKey = rateLimitKey.replace(":rate:", ":daily:") + ":" + java.time.LocalDate.now();
+        String dailyLimitKey =
+                rateLimitKey.replace(":rate:", ":daily:") + ":" + java.time.LocalDate.now();
         String dailyCountStr = redisTemplate.opsForValue().get(dailyLimitKey);
         int dailyCount = dailyCountStr != null ? Integer.parseInt(dailyCountStr) : 0;
 
         if (dailyCount >= MAX_DAILY_SEND_COUNT) {
-            throw new IllegalStateException("Daily " + type.toLowerCase() + " verification code limit reached ("
-                    + MAX_DAILY_SEND_COUNT + " codes)");
+            throw new IllegalStateException("Daily " + type.toLowerCase()
+                    + " verification code limit reached (" + MAX_DAILY_SEND_COUNT + " codes)");
         }
 
         // Set rate limit (1 minute)
         redisTemplate.opsForValue().set(rateLimitKey, "1", RATE_LIMIT_DURATION);
 
         // Increment daily counter
-        redisTemplate.opsForValue().set(dailyLimitKey, String.valueOf(dailyCount + 1), Duration.ofDays(1));
+        redisTemplate.opsForValue().set(dailyLimitKey, String.valueOf(dailyCount + 1),
+                Duration.ofDays(1));
     }
 }

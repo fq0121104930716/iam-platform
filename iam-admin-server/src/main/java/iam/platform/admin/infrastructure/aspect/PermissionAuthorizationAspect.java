@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import iam.platform.common.model.annotation.RequirePermission;
 import iam.platform.common.model.exception.AccessDeniedException;
 import iam.platform.admin.domain.service.PermissionEvaluationService;
-import iam.platform.admin.infrastructure.security.TenantContext;
+import iam.platform.common.context.TenantContext;
 
 import java.util.Set;
 

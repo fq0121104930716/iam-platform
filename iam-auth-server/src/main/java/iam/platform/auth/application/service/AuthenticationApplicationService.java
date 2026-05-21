@@ -15,7 +15,7 @@ import iam.platform.auth.domain.repository.UserRepository;
 import iam.platform.auth.domain.repository.TenantAccountRepository;
 import iam.platform.auth.domain.repository.TenantRepository;
 import iam.platform.auth.domain.model.valueobject.TenantAwareAuthenticationToken;
-import iam.platform.auth.domain.service.context.TenantContext;
+import iam.platform.common.context.TenantContext;
 
 import java.util.List;
 import java.util.Set;
@@ -32,7 +32,7 @@ public class AuthenticationApplicationService {
         private final PostAuthenticationPipeline pipeline;
         private final TenantAccountRepository tenantAccountRepository;
         private final TenantRepository tenantRepository;
-        private final UserRepository UserRepository;
+        private final UserRepository userRepository;
         private final TenantAccountRoleApplicationService tenantAccountRoleService;
 
         /**
@@ -56,7 +56,7 @@ public class AuthenticationApplicationService {
                                         "Cannot determine User ID - not authenticated");
                 }
 
-                User user = UserRepository.findById(userId).orElseThrow(
+                User user = userRepository.findById(userId).orElseThrow(
                                 () -> new IllegalStateException("User not found: " + userId));
 
                 TenantAccount tenantAccount = tenantAccountRepository.findById(tenantAccountId)

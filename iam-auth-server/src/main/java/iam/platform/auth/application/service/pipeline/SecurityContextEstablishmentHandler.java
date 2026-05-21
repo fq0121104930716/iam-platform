@@ -10,7 +10,7 @@ import iam.platform.auth.domain.model.entity.Tenant;
 import iam.platform.auth.domain.model.entity.TenantAccount;
 import iam.platform.auth.domain.repository.TenantRepository;
 import iam.platform.auth.domain.model.valueobject.TenantAwareAuthenticationToken;
-import iam.platform.auth.domain.service.context.TenantContext;
+import iam.platform.common.context.TenantContext;
 
 import java.util.List;
 import java.util.Set;
@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SecurityContextEstablishmentHandler implements PostAuthHandler {
 
+    private static final String SESSION_USER_ID = "SESSION_USER_ID";
     private static final String SESSION_TENANT_ID = "SESSION_TENANT_ID";
     private static final String SESSION_TENANT_ACCOUNT_ID = "SESSION_TENANT_ACCOUNT_ID";
 
@@ -73,6 +74,7 @@ public class SecurityContextEstablishmentHandler implements PostAuthHandler {
         // Store tenant IDs in session for subsequent requests
         HttpSession session = context.getRequest().getSession(false);
         if (session != null) {
+            session.setAttribute(SESSION_USER_ID, user.getId());
             session.setAttribute(SESSION_TENANT_ID, tenant.getId());
             session.setAttribute(SESSION_TENANT_ACCOUNT_ID, selectedAccount.getId());
         }
