@@ -45,7 +45,7 @@ public class AuditEventConsumer implements RocketMQListener<AuditEventMessage> {
                     message.getEventId(),
                     message.getSourceService(),
                     message.getTenantId(),
-                    message.getPersonId(),
+                    message.getUserId(),
                     message.getUsername(),
                     parseEventType(message.getEventType()),
                     parseEventCategory(message.getEventCategory()),

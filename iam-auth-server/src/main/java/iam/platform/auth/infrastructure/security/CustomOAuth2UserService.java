@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import iam.platform.auth.domain.model.entity.User;
+import iam.platform.auth.interfaces.security.CustomOAuth2User;
 import iam.platform.common.model.valueobject.UserCode;
 import iam.platform.auth.domain.repository.UserRepository;
 import iam.platform.auth.infrastructure.persistence.entity.UserExternalLoginPO;
@@ -69,11 +70,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         if (user == null) {
-            // 创建新的 User
+            // Create new User (OAuth2 users don't have local password)
             String username = oauth2User.getName() + "_" + provider;
-            user = User.builder().userCode(UserCode.generate().getValue())
-                    .username(username).email(email).passwordHash("").emailVerified(email != null)
-                    .nickname(nickname).enabled(true).accountLocked(false).build();
+            user = User.builder().userCode(UserCode.generate().getValue()).username(username)
+                    .email(email).emailVerified(email != null).nickname(nickname).enabled(true)
+                    .accountLocked(false).build();
             user = userRepository.save(user);
             log.info("Created new User from OAuth2 login: {}, provider: {}", user.getUsername(),
                     provider);

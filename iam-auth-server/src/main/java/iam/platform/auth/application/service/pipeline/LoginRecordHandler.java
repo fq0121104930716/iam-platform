@@ -17,7 +17,11 @@ public class LoginRecordHandler implements PostAuthHandler {
     @Override
     public void handle(PostAuthContext context) {
         User user = context.getUser();
-        user.recordLogin();
+        // Update login timestamp directly (anemic model)
+        user = user.toBuilder()
+                .lastLoginAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
+                .build();
         UserRepository.save(user);
     }
 

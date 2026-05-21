@@ -1,4 +1,4 @@
-package iam.platform.auth.infrastructure.security;
+package iam.platform.auth.domain.service.context;
 
 /**
  * Thread-local storage for current tenant context. Stores the authenticated User's ID, current

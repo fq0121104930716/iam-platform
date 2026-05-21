@@ -1,4 +1,4 @@
-package iam.platform.auth.infrastructure.security;
+package iam.platform.auth.interfaces.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;

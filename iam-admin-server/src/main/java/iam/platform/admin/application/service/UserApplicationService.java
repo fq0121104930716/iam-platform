@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import iam.platform.common.dto.request.CreateUserRequest;
@@ -14,7 +13,6 @@ import iam.platform.common.model.annotation.AuditLog;
 import iam.platform.admin.domain.model.entity.User;
 import iam.platform.common.model.enums.AuditEventType;
 import iam.platform.common.model.exception.UserNotFoundException;
-import iam.platform.common.model.valueobject.Password;
 import iam.platform.admin.domain.repository.UserRepository;
 import iam.platform.admin.domain.service.UserUniquenessService;
 import iam.platform.common.api.PageResponse;
@@ -25,7 +23,6 @@ import iam.platform.common.api.PageResponse;
 public class UserApplicationService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final UserUniquenessService userUniquenessService;
 
     @Transactional
@@ -37,13 +34,9 @@ public class UserApplicationService {
         userUniquenessService.ensureEmailUnique(request.getEmail(), null);
         userUniquenessService.ensurePhoneUnique(request.getPhone(), null);
 
-        // Password validation + hashing via value object
-        Password password =
-                Password.fromRawPassword(request.getPassword(), passwordEncoder::encode);
-
-        // Domain factory method handles construction with invariants
-        User user = User.register(request.getUsername(), request.getEmail(),
-                request.getPhone(), password, request.getNickname(), request.getAvatarUrl());
+        // Domain factory method (no password, credential created separately)
+        User user = User.register(request.getUsername(), request.getEmail(), request.getPhone(),
+                request.getNickname(), request.getAvatarUrl());
 
         user = userRepository.save(user);
         log.info("User created: {} (code: {})", user.getUsername(), user.getUserCode());
@@ -57,8 +50,7 @@ public class UserApplicationService {
     }
 
     @Transactional
-    @AuditLog(value = AuditEventType.USER_UPDATED, resourceType = "user",
-            action = "更新用户 ID=#{#id}")
+    @AuditLog(value = AuditEventType.USER_UPDATED, resourceType = "user", action = "更新用户 ID=#{#id}")
     public UserResponse updateUser(Long id, UpdateUserRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + id));
@@ -93,8 +85,7 @@ public class UserApplicationService {
     }
 
     @Transactional
-    @AuditLog(value = AuditEventType.USER_DELETED, resourceType = "user",
-            action = "注销用户 ID=#{#id}")
+    @AuditLog(value = AuditEventType.USER_DELETED, resourceType = "user", action = "注销用户 ID=#{#id}")
     public void deleteUser(Long id) {
         if (!userRepository.findById(id).isPresent()) {
             throw new UserNotFoundException("User not found: " + id);

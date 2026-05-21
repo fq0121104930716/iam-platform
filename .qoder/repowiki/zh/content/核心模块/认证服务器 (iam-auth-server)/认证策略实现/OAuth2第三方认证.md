@@ -12,8 +12,8 @@
 - [SsoProactiveAuthController.java](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/rest/SsoProactiveAuthController.java)
 - [JdbcOAuth2AuthorizationServiceConfig.java](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/JdbcOAuth2AuthorizationServiceConfig.java)
 - [RegisteredClientRepositoryAdapter.java](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/RegisteredClientRepositoryAdapter.java)
-- [UnifiedAuthenticationSuccessHandler.java](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationSuccessHandler.java)
-- [UnifiedAuthenticationFailureHandler.java](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFailureHandler.java)
+- [UnifiedAuthenticationSuccessHandler.java](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/handler/UnifiedAuthenticationSuccessHandler.java)
+- [UnifiedAuthenticationFailureHandler.java](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/handler/UnifiedAuthenticationFailureHandler.java)
 - [LoginController.java](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/LoginController.java)
 - [Application.java](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/entity/Application.java)
 - [统一认证框架.md](file://docs/design/统一认证框架.md)
@@ -80,8 +80,8 @@ L --> H
 - [SsoProactiveAuthController.java:35-62](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/rest/SsoProactiveAuthController.java#L35-L62)
 - [JdbcOAuth2AuthorizationServiceConfig.java:12-27](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/JdbcOAuth2AuthorizationServiceConfig.java#L12-L27)
 - [RegisteredClientRepositoryAdapter.java:17-27](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/RegisteredClientRepositoryAdapter.java#L17-L27)
-- [UnifiedAuthenticationSuccessHandler.java:25-56](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationSuccessHandler.java#L25-L56)
-- [UnifiedAuthenticationFailureHandler.java:12-36](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFailureHandler.java#L12-L36)
+- [UnifiedAuthenticationSuccessHandler.java:25-56](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/handler/UnifiedAuthenticationSuccessHandler.java#L25-L56)
+- [UnifiedAuthenticationFailureHandler.java:12-36](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/handler/UnifiedAuthenticationFailureHandler.java#L12-L36)
 - [LoginController.java:16-58](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/LoginController.java#L16-L58)
 - [Application.java:149-174](file://iam-auth-server/src/main/java/iam/platform/auth/domain/model/entity/Application.java#L149-L174)
 
@@ -141,7 +141,7 @@ Handler-->>Browser : "重定向至目标页/协议路由处理"
 图表来源
 - [DefaultSecurityConfig.java:37-51](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/DefaultSecurityConfig.java#L37-L51)
 - [CustomOAuth2UserService.java:27-50](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/CustomOAuth2UserService.java#L27-L50)
-- [UnifiedAuthenticationSuccessHandler.java:35-56](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationSuccessHandler.java#L35-L56)
+- [UnifiedAuthenticationSuccessHandler.java:35-56](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/handler/UnifiedAuthenticationSuccessHandler.java#L35-L56)
 
 ## 详细组件分析
 
@@ -265,8 +265,8 @@ Controller->>Browser : "302重定向到授权URL"
 章节来源
 - [统一认证框架.md:440-484](file://docs/design/统一认证框架.md#L440-L484)
 - [SsoProactiveAuthService.java:37-67](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/SsoProactiveAuthService.java#L37-L67)
-- [UnifiedAuthenticationSuccessHandler.java:35-56](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationSuccessHandler.java#L35-L56)
-- [UnifiedAuthenticationFailureHandler.java:12-36](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFailureHandler.java#L12-L36)
+- [UnifiedAuthenticationSuccessHandler.java:35-56](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/handler/UnifiedAuthenticationSuccessHandler.java#L35-L56)
+- [UnifiedAuthenticationFailureHandler.java:12-36](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/handler/UnifiedAuthenticationFailureHandler.java#L12-L36)
 
 ### 用户体验优化与错误处理
 - 登录页与提示
@@ -279,8 +279,8 @@ Controller->>Browser : "302重定向到授权URL"
 
 章节来源
 - [LoginController.java:16-58](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/LoginController.java#L16-L58)
-- [UnifiedAuthenticationSuccessHandler.java:35-56](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationSuccessHandler.java#L35-L56)
-- [UnifiedAuthenticationFailureHandler.java:12-36](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFailureHandler.java#L12-L36)
+- [UnifiedAuthenticationSuccessHandler.java:35-56](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/handler/UnifiedAuthenticationSuccessHandler.java#L35-L56)
+- [UnifiedAuthenticationFailureHandler.java:12-36](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/handler/UnifiedAuthenticationFailureHandler.java#L12-L36)
 
 ## 依赖关系分析
 - 过滤链与OAuth2登录
@@ -337,7 +337,7 @@ Application --> RegisteredClientRepositoryAdapter
   - 查看统一成功/失败处理器的重定向行为；确认登录页控制器的错误参数传递。
 
 章节来源
-- [UnifiedAuthenticationFailureHandler.java:12-36](file://iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/UnifiedAuthenticationFailureHandler.java#L12-L36)
+- [UnifiedAuthenticationFailureHandler.java:12-36](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/handler/UnifiedAuthenticationFailureHandler.java#L12-L36)
 - [LoginController.java:16-58](file://iam-auth-server/src/main/java/iam/platform/auth/interfaces/web/LoginController.java#L16-L58)
 - [SsoProactiveAuthService.java:37-67](file://iam-auth-server/src/main/java/iam/platform/auth/application/service/SsoProactiveAuthService.java#L37-L67)
 

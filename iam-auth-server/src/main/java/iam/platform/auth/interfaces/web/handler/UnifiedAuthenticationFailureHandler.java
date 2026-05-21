@@ -1,4 +1,4 @@
-package iam.platform.auth.infrastructure.security;
+package iam.platform.auth.interfaces.web.handler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

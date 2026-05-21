@@ -1,10 +1,9 @@
-package iam.platform.auth.infrastructure.security;
+package iam.platform.auth.domain.model.valueobject;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
-import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
 
 import java.util.Collection;
 

@@ -1,4 +1,4 @@
-package iam.platform.auth.infrastructure.security;
+package iam.platform.auth.application.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -11,6 +11,7 @@ import iam.platform.auth.application.service.pipeline.PreAuthenticationPipeline;
 import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
+import iam.platform.auth.domain.model.valueobject.UnifiedAuthenticationToken;
 import iam.platform.auth.domain.service.AuthenticationStrategy;
 
 import java.util.List;

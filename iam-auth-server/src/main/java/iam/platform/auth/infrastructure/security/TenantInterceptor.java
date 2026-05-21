@@ -6,6 +6,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+import iam.platform.auth.domain.service.context.TenantContext;
 
 /**
  * HTTP request interceptor that extracts tenant information from the request and populates the

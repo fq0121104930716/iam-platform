@@ -50,7 +50,7 @@ public class AuditLogApplicationService {
         // Apply filters
         if (request.getTenantId() != null) {
             logsPage = auditLogRepository.findByTenantId(request.getTenantId(), pageRequest);
-        } else if (request.getPersonId() != null) {
+        } else if (request.getUserId() != null) {
             logsPage = auditLogRepository.findByUserId(request.getUserId(), pageRequest);
         } else if (request.getEventCategory() != null) {
             logsPage = auditLogRepository.findByEventCategory(request.getEventCategory(), pageRequest);

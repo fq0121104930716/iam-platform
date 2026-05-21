@@ -9,6 +9,7 @@ import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.entity.TenantAccount;
 import iam.platform.auth.domain.repository.UserRepository;
 import iam.platform.auth.domain.repository.TenantAccountRepository;
+import iam.platform.auth.domain.service.context.TenantContext;
 
 import java.util.List;
 import java.util.Set;

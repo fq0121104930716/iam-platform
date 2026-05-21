@@ -75,7 +75,6 @@ public class LdapUserLookupService {
         String email = username + "@" + (domain != null ? domain : "ldap.local");
 
         user = User.builder().username(username).email(email).nickname(username)
-                .passwordHash("") // No password stored for LDAP users
                 .enabled(true).accountLocked(false).build();
 
         user = UserRepository.save(user);

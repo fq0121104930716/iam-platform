@@ -42,10 +42,6 @@ public class UserPO {
     private String phone;
 
     @Setter
-    @Column(name = "password_hash", nullable = false, length = 255)
-    private String passwordHash;
-
-    @Setter
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 
@@ -83,12 +79,11 @@ public class UserPO {
     @Setter
     private LocalDateTime updatedAt;
 
-    public UserPO(String userCode, String username, String email, String passwordHash,
+    public UserPO(String userCode, String username, String email,
             String nickname) {
         this.userCode = userCode;
         this.username = username;
         this.email = email;
-        this.passwordHash = passwordHash;
         this.nickname = nickname;
         this.enabled = true;
         this.accountLocked = false;

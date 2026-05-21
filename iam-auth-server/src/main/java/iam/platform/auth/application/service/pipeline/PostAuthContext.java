@@ -6,7 +6,7 @@ import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.entity.TenantAccount;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
-import iam.platform.auth.infrastructure.security.TenantAwareAuthenticationToken;
+import iam.platform.auth.domain.model.valueobject.TenantAwareAuthenticationToken;
 
 import java.time.LocalDateTime;
 import java.util.List;

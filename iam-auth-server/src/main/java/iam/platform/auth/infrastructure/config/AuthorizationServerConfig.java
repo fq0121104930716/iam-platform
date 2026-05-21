@@ -31,7 +31,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import lombok.RequiredArgsConstructor;
 
-import iam.platform.auth.infrastructure.security.TenantAwareAuthenticationFilter;
+import iam.platform.auth.interfaces.web.filter.TenantAwareAuthenticationFilter;
 
 @Configuration
 @RequiredArgsConstructor

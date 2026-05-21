@@ -10,7 +10,6 @@ import iam.platform.common.model.enums.EventCategory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -58,7 +57,8 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
 
     @Override
     public Page<AuditLog> findByEventCategory(EventCategory category, Pageable pageable) {
-        return jpaRepository.findByEventCategory(category.name(), pageable).map(converter::toDomain);
+        return jpaRepository.findByEventCategory(category.name(), pageable)
+                .map(converter::toDomain);
     }
 
     @Override
@@ -67,13 +67,16 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
     }
 
     @Override
-    public Page<AuditLog> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end, Pageable pageable) {
+    public Page<AuditLog> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end,
+            Pageable pageable) {
         return jpaRepository.findByCreatedAtBetween(start, end, pageable).map(converter::toDomain);
     }
 
     @Override
-    public Page<AuditLog> findByResourceIdAndResourceType(Long resourceId, String resourceType, Pageable pageable) {
-        return jpaRepository.findByResourceTypeAndResourceId(resourceType, resourceId, pageable).map(converter::toDomain);
+    public Page<AuditLog> findByResourceIdAndResourceType(Long resourceId, String resourceType,
+            Pageable pageable) {
+        return jpaRepository.findByResourceTypeAndResourceId(resourceType, resourceId, pageable)
+                .map(converter::toDomain);
     }
 
     @Override
@@ -87,7 +90,8 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
     }
 
     @Override
-    public Map<EventCategory, Long> countByEventCategory(Long tenantId, LocalDateTime start, LocalDateTime end) {
+    public Map<EventCategory, Long> countByEventCategory(Long tenantId, LocalDateTime start,
+            LocalDateTime end) {
         List<Object[]> results = jpaRepository.countByEventCategory(tenantId, start, end);
         Map<EventCategory, Long> map = new LinkedHashMap<>();
         for (Object[] row : results) {
@@ -103,7 +107,8 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
     }
 
     @Override
-    public Map<String, Long> countTopEventTypes(Long tenantId, LocalDateTime start, LocalDateTime end, int limit) {
+    public Map<String, Long> countTopEventTypes(Long tenantId, LocalDateTime start,
+            LocalDateTime end, int limit) {
         List<Object[]> results = jpaRepository.countTopEventTypes(tenantId, start, end, limit);
         Map<String, Long> map = new LinkedHashMap<>();
         for (Object[] row : results) {

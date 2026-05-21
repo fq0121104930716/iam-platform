@@ -1,62 +1,53 @@
 -- ============================================================
 -- V1__audit_schema_initialization.sql
--- IAM Audit Server Schema
+-- IAM Audit Server Base Schema
+-- ============================================================
+-- This script creates the core audit tables for iam-audit-server
+-- Migrated from iam-admin-server V1__complete_schema_initialization.sql
 -- ============================================================
 
--- Utility: Trigger function for updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- ============================================================
+-- Step 1: Create t_audit_log - Core audit log table
+-- ============================================================
 
--- ============================================================
--- t_audit_log - Enhanced audit log table
--- ============================================================
 CREATE TABLE IF NOT EXISTS t_audit_log (
     id                  BIGSERIAL PRIMARY KEY,
-    event_id            VARCHAR(36) NOT NULL UNIQUE,
-    source_service      VARCHAR(50) NOT NULL,
-    tenant_id           BIGINT,
-    person_id           BIGINT,
+    tenant_id           BIGINT,  -- No FK constraint: may reference external tenant table
+    user_id             BIGINT,  -- Operator user ID (renamed from person_id)
     username            VARCHAR(100),
     event_type          VARCHAR(30) NOT NULL,
     event_category      VARCHAR(20) NOT NULL,
     resource_id         BIGINT,
     resource_type       VARCHAR(50),
     action              VARCHAR(200),
-    ip_address          VARCHAR(45),
+    ip_address          VARCHAR(45),     -- IPv6 max length
     user_agent          VARCHAR(500),
     request_uri         VARCHAR(500),
-    request_params      TEXT,
+    request_params      TEXT,            -- JSON-formatted request parameters
     result              VARCHAR(10) NOT NULL,
     error_message       VARCHAR(2000),
-    trace_id            VARCHAR(64),
-    encrypted_fields    VARCHAR(200),
+    trace_id            VARCHAR(100),    -- Distributed tracing ID
+    span_id             VARCHAR(100),    -- Span ID for request chain
+    parent_span_id      VARCHAR(100),    -- Parent span ID
+    encrypted_fields    VARCHAR(200),    -- JSON array of encrypted field names
     created_at          TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Indexes for t_audit_log
 CREATE INDEX idx_audit_tenant_id ON t_audit_log(tenant_id);
-CREATE INDEX idx_audit_person_id ON t_audit_log(person_id);
+CREATE INDEX idx_audit_user_id ON t_audit_log(user_id);
 CREATE INDEX idx_audit_event_type ON t_audit_log(event_type);
 CREATE INDEX idx_audit_event_category ON t_audit_log(event_category);
 CREATE INDEX idx_audit_resource ON t_audit_log(resource_type, resource_id);
 CREATE INDEX idx_audit_result ON t_audit_log(result);
 CREATE INDEX idx_audit_created_at ON t_audit_log(created_at);
 CREATE INDEX idx_audit_tenant_category_time ON t_audit_log(tenant_id, event_category, created_at);
-CREATE INDEX idx_audit_source_service ON t_audit_log(source_service);
-CREATE INDEX idx_audit_event_id ON t_audit_log(event_id);
-CREATE INDEX idx_audit_trace_id ON t_audit_log(trace_id);
 CREATE INDEX idx_audit_failure ON t_audit_log(result) WHERE result = 'FAILURE';
+CREATE INDEX idx_audit_trace_id ON t_audit_log(trace_id);
 
-COMMENT ON TABLE t_audit_log IS 'Enhanced audit log table - records all critical operations from all services';
-COMMENT ON COLUMN t_audit_log.event_id IS 'Unique event identifier for deduplication (UUID)';
-COMMENT ON COLUMN t_audit_log.source_service IS 'Source service name (e.g., iam-auth-service, iam-admin-service)';
-COMMENT ON COLUMN t_audit_log.tenant_id IS 'Tenant ID that owns this audit record';
-COMMENT ON COLUMN t_audit_log.person_id IS 'Operator person ID';
+COMMENT ON TABLE t_audit_log IS 'Audit log table - records all critical operations';
+COMMENT ON COLUMN t_audit_log.tenant_id IS 'Tenant ID that owns this audit record (null for system-level operations)';
+COMMENT ON COLUMN t_audit_log.user_id IS 'Operator user ID';
 COMMENT ON COLUMN t_audit_log.username IS 'Operator username';
 COMMENT ON COLUMN t_audit_log.event_type IS 'Event type: LOGIN_SUCCESS, ROLE_ASSIGN, etc.';
 COMMENT ON COLUMN t_audit_log.event_category IS 'Event category: AUTHENTICATION, AUTHORIZATION, ACCOUNT, ADMINISTRATION, SESSION';
@@ -69,30 +60,15 @@ COMMENT ON COLUMN t_audit_log.request_uri IS 'Request URI';
 COMMENT ON COLUMN t_audit_log.request_params IS 'Request parameters (JSON, sensitive data masked)';
 COMMENT ON COLUMN t_audit_log.result IS 'Operation result: SUCCESS/FAILURE';
 COMMENT ON COLUMN t_audit_log.error_message IS 'Error message (on failure)';
-COMMENT ON COLUMN t_audit_log.trace_id IS 'Distributed tracing correlation ID';
+COMMENT ON COLUMN t_audit_log.trace_id IS 'Distributed tracing ID for request correlation';
+COMMENT ON COLUMN t_audit_log.span_id IS 'Span ID for request chain tracing';
+COMMENT ON COLUMN t_audit_log.parent_span_id IS 'Parent span ID for hierarchical tracing';
 COMMENT ON COLUMN t_audit_log.encrypted_fields IS 'JSON array of encrypted field names';
 
--- Cleanup function for old audit logs
-CREATE OR REPLACE FUNCTION cleanup_old_audit_logs(retention_days INTEGER DEFAULT 180)
-RETURNS INTEGER AS $$
-DECLARE
-    cutoff_date TIMESTAMP;
-    deleted_count INTEGER;
-BEGIN
-    cutoff_date := NOW() - (retention_days || ' days')::INTERVAL;
-    
-    DELETE FROM t_audit_log WHERE created_at < cutoff_date;
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    
-    RETURN deleted_count;
-END;
-$$ LANGUAGE plpgsql;
-
-COMMENT ON FUNCTION cleanup_old_audit_logs IS 'Cleanup expired audit logs, default retention is 180 days';
-
 -- ============================================================
--- t_alert_rule - Alert rule definitions
+-- Step 2: Create t_alert_rule - Alert rule definitions
 -- ============================================================
+
 CREATE TABLE IF NOT EXISTS t_alert_rule (
     id                      BIGSERIAL PRIMARY KEY,
     rule_code               VARCHAR(50) NOT NULL UNIQUE,
@@ -109,9 +85,7 @@ CREATE TABLE IF NOT EXISTS t_alert_rule (
     created_by              VARCHAR(100)
 );
 
-CREATE TRIGGER update_t_alert_rule_updated_at
-    BEFORE UPDATE ON t_alert_rule
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE INDEX idx_alert_rule_enabled ON t_alert_rule(enabled);
 
 COMMENT ON TABLE t_alert_rule IS 'Alert rule definitions for real-time monitoring';
 COMMENT ON COLUMN t_alert_rule.rule_code IS 'Unique rule identifier';
@@ -123,8 +97,9 @@ COMMENT ON COLUMN t_alert_rule.severity IS 'Alert severity: LOW, MEDIUM, HIGH, C
 COMMENT ON COLUMN t_alert_rule.notification_channels IS 'Comma-separated notification channels: EMAIL, WEBHOOK';
 
 -- ============================================================
--- t_alert_record - Triggered alert records
+-- Step 3: Create t_alert_record - Triggered alert records
 -- ============================================================
+
 CREATE TABLE IF NOT EXISTS t_alert_record (
     id                  BIGSERIAL PRIMARY KEY,
     rule_id             BIGINT NOT NULL REFERENCES t_alert_rule(id) ON DELETE CASCADE,
@@ -147,8 +122,9 @@ COMMENT ON COLUMN t_alert_record.sample_event_ids IS 'JSON array of related even
 COMMENT ON COLUMN t_alert_record.status IS 'Alert status: NEW, ACKNOWLEDGED, RESOLVED';
 
 -- ============================================================
--- t_siem_endpoint - SIEM integration endpoints
+-- Step 4: Create t_siem_endpoint - SIEM integration endpoints
 -- ============================================================
+
 CREATE TABLE IF NOT EXISTS t_siem_endpoint (
     id                          BIGSERIAL PRIMARY KEY,
     endpoint_name               VARCHAR(100) NOT NULL,
@@ -170,8 +146,9 @@ COMMENT ON COLUMN t_siem_endpoint.auth_config IS 'Encrypted authentication confi
 COMMENT ON COLUMN t_siem_endpoint.format IS 'Export format: CEF, LEEF, JSON';
 
 -- ============================================================
--- t_compliance_report - Compliance report metadata
+-- Step 5: Create t_compliance_report - Compliance report metadata
 -- ============================================================
+
 CREATE TABLE IF NOT EXISTS t_compliance_report (
     id              BIGSERIAL PRIMARY KEY,
     report_code     VARCHAR(50) NOT NULL UNIQUE,
@@ -195,7 +172,28 @@ COMMENT ON COLUMN t_compliance_report.status IS 'Report status: GENERATING, COMP
 COMMENT ON COLUMN t_compliance_report.summary_json IS 'Report summary as JSON';
 
 -- ============================================================
--- Seed Data: Default Alert Rules
+-- Step 6: Create cleanup function for old audit logs
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION cleanup_old_audit_logs(retention_days INTEGER DEFAULT 180)
+RETURNS INTEGER AS $$
+DECLARE
+    cutoff_date TIMESTAMP;
+    deleted_count INTEGER;
+BEGIN
+    cutoff_date := NOW() - (retention_days || ' days')::INTERVAL;
+    
+    DELETE FROM t_audit_log WHERE created_at < cutoff_date;
+    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    
+    RETURN deleted_count;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON FUNCTION cleanup_old_audit_logs IS 'Cleanup expired audit logs, default retention is 180 days';
+
+-- ============================================================
+-- Step 7: Seed Data - Default Alert Rules
 -- ============================================================
 
 INSERT INTO t_alert_rule (rule_code, rule_name, event_type_filter, condition_expression, threshold, time_window_seconds, severity, notification_channels, created_by) VALUES
@@ -203,5 +201,5 @@ INSERT INTO t_alert_rule (rule_code, rule_name, event_type_filter, condition_exp
 ('ACCOUNT_LOCKOUT_CASCADE', '账户锁定级联', 'ACCOUNT_LOCKED', '{"type": "count"}', 5, 600, 'CRITICAL', 'EMAIL,WEBHOOK', 'system'),
 ('PRIVILEGE_ESCALATION', '权限提升', 'ROLE_ASSIGN,PERMISSION_CHANGE', '{"type": "any"}', 1, 0, 'HIGH', 'EMAIL,WEBHOOK', 'system'),
 ('OFF_HOURS_ACCESS', '非工作时间访问', 'LOGIN_SUCCESS', '{"type": "time_range", "start": "22:00", "end": "06:00"}', 1, 0, 'MEDIUM', 'EMAIL', 'system'),
-('MASS_DATA_EXPORT', '大量数据导出', 'EXPORT', '{"type": "count", "dimension": "person_id"}', 100, 60, 'HIGH', 'EMAIL,WEBHOOK', 'system')
+('MASS_DATA_EXPORT', '大量数据导出', 'EXPORT', '{"type": "count", "dimension": "user_id"}', 100, 60, 'HIGH', 'EMAIL,WEBHOOK', 'system')
 ON CONFLICT (rule_code) DO NOTHING;

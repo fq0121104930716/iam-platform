@@ -3,7 +3,6 @@ package iam.platform.audit.domain.repository;
 import iam.platform.audit.domain.model.entity.ComplianceReport;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -24,7 +23,8 @@ public interface ComplianceReportRepository {
 
     Page<ComplianceReport> findByStatus(String status, Pageable pageable);
 
-    Page<ComplianceReport> findByPeriodBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
+    Page<ComplianceReport> findByPeriodBetween(LocalDateTime start, LocalDateTime end,
+            Pageable pageable);
 
     Page<ComplianceReport> findAll(Pageable pageable);
 }

@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import iam.platform.common.util.Guard;
-import iam.platform.common.model.valueobject.Password;
 import iam.platform.common.model.valueobject.UserCode;
 
 import java.time.LocalDateTime;
@@ -20,7 +19,6 @@ public class User {
     private String username;
     private String email;
     private String phone;
-    private String passwordHash;
     private boolean emailVerified;
     private boolean phoneVerified;
     private String nickname;
@@ -37,7 +35,7 @@ public class User {
      * Register a new User with generated UserCode and default states.
      */
     public static User register(String username, String email, String phone,
-            Password password, String nickname, String avatarUrl) {
+            String nickname, String avatarUrl) {
         Guard.notBlank(username, "Username cannot be blank");
 
         return User.builder()
@@ -45,7 +43,6 @@ public class User {
                 .username(username)
                 .email(email)
                 .phone(phone)
-                .passwordHash(password.getHashedValue())
                 .emailVerified(false)
                 .phoneVerified(false)
                 .nickname(nickname)
@@ -87,15 +84,6 @@ public class User {
         Guard.notBlank(newPhone, "Phone cannot be blank");
         this.phone = newPhone;
         this.phoneVerified = false;
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    /**
-     * Change the password using a pre-validated and hashed Password value object.
-     */
-    public void changePassword(Password newPassword) {
-        Guard.notNull(newPassword, "Password cannot be null");
-        this.passwordHash = newPassword.getHashedValue();
         this.updatedAt = LocalDateTime.now();
     }
 

@@ -1,4 +1,4 @@
-package iam.platform.auth.infrastructure.security;
+package iam.platform.auth.interfaces.web.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import iam.platform.auth.domain.service.context.TenantContext;
 
 import java.io.IOException;
 

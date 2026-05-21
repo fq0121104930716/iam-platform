@@ -13,13 +13,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import iam.platform.auth.application.service.AuthenticationApplicationService;
+import iam.platform.auth.application.service.CompositeAuthenticationProvider;
 import iam.platform.auth.application.service.routing.ProtocolRouter;
-import iam.platform.auth.infrastructure.security.CompositeAuthenticationProvider;
 import iam.platform.auth.infrastructure.security.CustomOAuth2UserService;
-import iam.platform.auth.infrastructure.security.TenantAwareAuthenticationFilter;
-import iam.platform.auth.infrastructure.security.UnifiedAuthenticationFailureHandler;
-import iam.platform.auth.infrastructure.security.UnifiedAuthenticationFilter;
-import iam.platform.auth.infrastructure.security.UnifiedAuthenticationSuccessHandler;
+import iam.platform.auth.interfaces.web.filter.TenantAwareAuthenticationFilter;
+import iam.platform.auth.interfaces.web.filter.UnifiedAuthenticationFilter;
+import iam.platform.auth.interfaces.web.handler.UnifiedAuthenticationFailureHandler;
+import iam.platform.auth.interfaces.web.handler.UnifiedAuthenticationSuccessHandler;
 
 @Configuration
 @EnableWebSecurity

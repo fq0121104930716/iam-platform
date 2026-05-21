@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Map;
@@ -17,11 +16,7 @@ import java.util.Map;
 /**
  * OpenFeign client for admin service.
  */
-@FeignClient(
-    name = "iam-admin-service",
-    path = "/v1",
-    configuration = FeignClientConfig.class
-)
+@FeignClient(name = "iam-admin-service", path = "/v1", configuration = FeignClientConfig.class)
 public interface AdminFeignClient {
 
     /**

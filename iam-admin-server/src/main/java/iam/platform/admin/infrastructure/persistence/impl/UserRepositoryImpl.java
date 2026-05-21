@@ -87,7 +87,6 @@ public class UserRepositoryImpl implements UserRepository {
         po.setUsername(user.getUsername());
         po.setEmail(user.getEmail());
         po.setPhone(user.getPhone());
-        po.setPasswordHash(user.getPasswordHash());
         po.setEmailVerified(user.isEmailVerified());
         po.setPhoneVerified(user.isPhoneVerified());
         po.setNickname(user.getNickname());
@@ -103,7 +102,7 @@ public class UserRepositoryImpl implements UserRepository {
     private User toDomain(UserPO po) {
         return User.builder().id(po.getId()).userCode(po.getUserCode())
                 .username(po.getUsername()).email(po.getEmail()).phone(po.getPhone())
-                .passwordHash(po.getPasswordHash()).emailVerified(po.isEmailVerified())
+                .emailVerified(po.isEmailVerified())
                 .phoneVerified(po.isPhoneVerified()).nickname(po.getNickname())
                 .avatarUrl(po.getAvatarUrl()).enabled(po.isEnabled())
                 .accountLocked(po.isAccountLocked()).lastLoginAt(po.getLastLoginAt())

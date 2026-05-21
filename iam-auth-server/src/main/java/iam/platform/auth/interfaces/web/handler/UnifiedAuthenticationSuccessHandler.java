@@ -1,4 +1,4 @@
-package iam.platform.auth.infrastructure.security;
+package iam.platform.auth.interfaces.web.handler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,7 +13,9 @@ import iam.platform.auth.application.service.routing.ProtocolRouter;
 import iam.platform.auth.domain.model.entity.User;
 import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
+import iam.platform.auth.domain.model.valueobject.UnifiedAuthenticationToken;
 import iam.platform.auth.domain.service.impl.OAuth2AuthenticationStrategy;
+import iam.platform.auth.interfaces.security.CustomOAuth2User;
 
 import java.io.IOException;
 

@@ -1,4 +1,4 @@
-package iam.platform.auth.infrastructure.security;
+package iam.platform.auth.interfaces.web.filter;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -7,6 +7,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
+import iam.platform.auth.domain.model.valueobject.UnifiedAuthenticationToken;
 
 /**
  * Unified authentication filter that handles all first-party authentication methods (password, SMS
