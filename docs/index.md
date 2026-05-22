@@ -55,28 +55,24 @@
 
 #### 2.2 协议文档 (docs/design/protocol/)
 
-- **[OIDC完整文档.md](design/protocol/OIDC完整文档.md)**
+- **[协议文档-OIDC.md](design/protocol/协议文档-OIDC.md)**
   - OIDC协议完整说明
   - 授权码流程
   - Token机制
   - 适合：所有开发者
 
-- **[SAML-支持文档.md](design/protocol/SAML-支持文档.md)**
+- **[协议文档-SAML.md](design/protocol/协议文档-SAML.md)**
   - SAML 2.0 协议支持
   - IdP metadata 生成
   - OpenSAML 集成
   - 适合：需要SAML集成的开发者
 
-- **[CAS-单点登出实现说明.md](design/protocol/CAS-单点登出实现说明.md)**
-  - CAS SLO 实现原理
-  - 技术架构
-  - 核心流程
-  - 适合：开发者、架构师
-
-- **[CAS-单点登出使用示例.md](design/protocol/CAS-单点登出使用示例.md)**
-  - 使用示例
-  - 配置方法
-  - 适合：第三方服务开发者
+- **[协议文档-CAS.md](design/protocol/协议文档-CAS.md)**
+  - CAS 3.0 协议完整说明
+  - 单点登录 (SSO) 流程
+  - 单点登出 (SLO) 实现
+  - 客户端集成指南
+  - 适合：所有开发者
 
 ### 3. 集成与对接
 
@@ -160,18 +156,17 @@
 
 ### 我需要实现 CAS 单点登出
 
-1. 阅读 [CAS-单点登出实现说明.md](design/protocol/CAS-单点登出实现说明.md) 了解原理
-2. 参考 [CAS-单点登出使用示例.md](design/protocol/CAS-单点登出使用示例.md) 进行配置
+1. 阅读 [协议文档-CAS.md](design/protocol/协议文档-CAS.md) 了解完整协议和实现
 
 ### 我需要集成 SAML
 
-1. 阅读 [SAML-支持文档.md](design/protocol/SAML-支持文档.md)
+1. 阅读 [协议文档-SAML.md](design/protocol/协议文档-SAML.md)
 2. 了解 OpenSAML 集成方法
 3. 配置 IdP metadata
 
 ### 我需要了解 OIDC 协议
 
-1. 阅读 [OIDC完整文档.md](design/protocol/OIDC完整文档.md)
+1. 阅读 [协议文档-OIDC.md](design/protocol/协议文档-OIDC.md)
 2. 了解授权码流程和Token机制
 3. 参考第三方服务对接指南进行集成
 
@@ -225,10 +220,9 @@
 │   │   ├── Token机制详解.md           # Token设计
 │   │   ├── 第三方服务对接指南.md       # 集成设计
 │   │   └── protocol/                  # 协议文档目录
-│   │       ├── OIDC完整文档.md         # OIDC协议
-│   │       ├── SAML-支持文档.md        # SAML协议
-│   │       ├── CAS-单点登出实现说明.md  # CAS协议
-│   │       └── CAS-单点登出使用示例.md  # CAS协议示例
+│   │       ├── 协议文档-OIDC.md        # OIDC协议
+│   │       ├── 协议文档-SAML.md        # SAML协议
+│   │       └── 协议文档-CAS.md         # CAS协议
 │   ├── plan/                          # Qoder临时计划（空）
 │   └── archived/                      # 归档文档
 └── .qoder/rules/                      # 项目规范
