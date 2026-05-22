@@ -48,7 +48,7 @@ public class AuthenticationApplicationService {
          * Select a specific tenant account and establish full authentication context. Called by
          * TenantSelectionController after user picks a tenant.
          */
-        public AuthenticationResult selectTenant(Long tenantAccountId, HttpServletRequest request) {
+        public AuthenticationResult selectTenant(Long tenantAccountId) {
                 // Get current User from TenantContext or SecurityContext
                 Long userId = TenantContext.getCurrentUserId();
                 if (userId == null) {
@@ -99,13 +99,6 @@ public class AuthenticationApplicationService {
                 TenantContext.setCurrentTenantId(tenant.getId());
                 TenantContext.setCurrentTenantAccountId(tenantAccountId);
                 tenantAuth.registerToContext();
-
-                // Store in session
-                var session = request.getSession(false);
-                if (session != null) {
-                        session.setAttribute("SESSION_TENANT_ID", tenant.getId());
-                        session.setAttribute("SESSION_TENANT_ACCOUNT_ID", tenantAccountId);
-                }
 
                 // Get all active tenant accounts for the result
                 List<TenantAccount> allActiveAccounts = tenantAccountRepository.findByUserId(userId)

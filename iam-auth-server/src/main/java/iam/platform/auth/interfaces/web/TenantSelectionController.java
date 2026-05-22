@@ -1,6 +1,5 @@
 package iam.platform.auth.interfaces.web;
 
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,9 +44,9 @@ public class TenantSelectionController {
     }
 
     @PostMapping("/select-tenant")
-    public String selectTenant(@RequestParam Long tenantAccountId, HttpServletRequest request) {
+    public String selectTenant(@RequestParam Long tenantAccountId) {
         try {
-            authenticationApplicationService.selectTenant(tenantAccountId, request);
+            authenticationApplicationService.selectTenant(tenantAccountId);
             // After tenant selection, check if there's a pending OAuth2 authorization request
             return "redirect:/";
         } catch (Exception e) {
