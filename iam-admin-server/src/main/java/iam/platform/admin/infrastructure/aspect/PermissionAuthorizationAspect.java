@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import iam.platform.common.model.annotation.RequirePermission;
@@ -12,6 +13,7 @@ import iam.platform.common.model.exception.AccessDeniedException;
 import iam.platform.admin.domain.service.PermissionEvaluationService;
 import iam.platform.common.context.TenantContext;
 
+import java.lang.reflect.Method;
 import java.util.Set;
 
 /**
@@ -27,9 +29,15 @@ public class PermissionAuthorizationAspect {
 
     private final PermissionEvaluationService permissionService;
 
-    @Around("@annotation(requirePermission)")
-    public Object checkPermission(ProceedingJoinPoint joinPoint,
-            RequirePermission requirePermission) throws Throwable {
+    @Around("@annotation(iam.platform.common.model.annotation.RequirePermission)")
+    public Object checkPermission(ProceedingJoinPoint joinPoint) throws Throwable {
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        Method method = signature.getMethod();
+        RequirePermission requirePermission = method.getAnnotation(RequirePermission.class);
+        if (requirePermission == null) {
+            return joinPoint.proceed();
+        }
+
         Long tenantAccountId = TenantContext.getCurrentTenantAccountId();
         if (tenantAccountId == null) {
             log.warn("Permission check failed: no tenant context for method {}",

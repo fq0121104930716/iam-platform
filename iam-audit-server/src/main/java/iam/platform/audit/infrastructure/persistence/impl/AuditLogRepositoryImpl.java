@@ -57,13 +57,12 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
 
     @Override
     public Page<AuditLog> findByEventCategory(EventCategory category, Pageable pageable) {
-        return jpaRepository.findByEventCategory(category.name(), pageable)
-                .map(converter::toDomain);
+        return jpaRepository.findByEventCategory(category, pageable).map(converter::toDomain);
     }
 
     @Override
     public Page<AuditLog> findByResult(AuditResult result, Pageable pageable) {
-        return jpaRepository.findByResult(result.name(), pageable).map(converter::toDomain);
+        return jpaRepository.findByResult(result, pageable).map(converter::toDomain);
     }
 
     @Override
@@ -95,13 +94,18 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
         List<Object[]> results = jpaRepository.countByEventCategory(tenantId, start, end);
         Map<EventCategory, Long> map = new LinkedHashMap<>();
         for (Object[] row : results) {
-            String category = (String) row[0];
-            Long count = (Long) row[1];
-            try {
-                map.put(EventCategory.valueOf(category), count);
-            } catch (IllegalArgumentException e) {
-                // Skip unknown categories
+            EventCategory category;
+            if (row[0] instanceof EventCategory) {
+                category = (EventCategory) row[0];
+            } else {
+                try {
+                    category = EventCategory.valueOf(row[0].toString());
+                } catch (IllegalArgumentException e) {
+                    continue;
+                }
             }
+            Long count = (Long) row[1];
+            map.put(category, count);
         }
         return map;
     }
