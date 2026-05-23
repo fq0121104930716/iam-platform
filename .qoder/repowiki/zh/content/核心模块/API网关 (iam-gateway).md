@@ -9,17 +9,17 @@
 - [JwtClaimsHeaderFilter.java](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/filter/JwtClaimsHeaderFilter.java)
 - [GatewayFilterConfig.java](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java)
 - [application.yml](file://iam-gateway/src/main/resources/application.yml)
-- [bootstrap.yml](file://iam-gateway/bootstrap.yml)
+- [bootstrap.yml](file://iam-gateway/src/main/resources/bootstrap.yml)
 - [pom.xml](file://iam-gateway/pom.xml)
 - [README.md](file://README.md)
 </cite>
 
 ## 更新摘要
 **变更内容**
-- 新增JwtClaimsHeaderFilter组件，从JWT令牌中提取用户和租户信息并添加标准HTTP头部
-- 增强跨服务通信能力，提供标准化的用户身份传递机制
-- 新增GatewayFilterConfig配置类，管理过滤器相关Bean的注册
-- 更新安全过滤链与请求处理流程，确保用户信息在请求转发前被正确提取和传递
+- 新增IP-based KeyResolver Bean用于RequestRateLimiter，实现基于客户端IP的限流策略
+- 增强JwtClaimsHeaderFilter组件，完善JWT令牌处理与用户信息提取功能
+- 优化过滤器配置管理，通过GatewayFilterConfig集中管理WebFlux过滤器Bean
+- 完善安全过滤链与请求处理流程，确保用户信息在请求转发前被正确提取和传递
 
 ## 目录
 1. [简介](#简介)
@@ -39,7 +39,8 @@
 - 负载均衡与服务发现集成
 - 安全过滤链路与认证授权
 - JWT 令牌验证、认证转换器与权限拦截
-- **新增：JwtClaimsHeaderFilter用户信息提取与传递**
+- **新增：IP-based KeyResolver Bean用于RequestRateLimiter**
+- **增强：JwtClaimsHeaderFilter用户信息提取与传递**
 - 限流保护与跨域策略
 - 性能优化、监控与可观测性
 - 故障排查与运维建议
@@ -50,8 +51,8 @@ iam-gateway 是一个基于 Spring Cloud Gateway 的响应式网关，负责对�
 - 启动类：应用入口，启用服务发现客户端
 - 安全配置：三段式安全过滤链，分别处理浏览器登录、资源服务器 JWT 验证、默认放行路径
 - 认证转换器：从 JWT 中提取角色并转换为认证主体
-- **新增：过滤器配置：管理JwtClaimsHeaderFilter等WebFlux过滤器**
-- **新增：JwtClaimsHeaderFilter：从JWT提取用户信息并添加HTTP头部**
+- **新增：过滤器配置：管理WebFlux过滤器与KeyResolver Bean的注册**
+- **增强：JwtClaimsHeaderFilter：从JWT提取用户和租户信息并添加HTTP头部**
 - 配置文件：路由规则、全局跨域、OAuth2/OIDC 客户端与资源服务器配置、Redis 限流、管理端点与监控
 
 ```mermaid
@@ -63,16 +64,18 @@ C["JwtAuthenticationConverter<br/>JWT权限转换"]
 D["GatewayAuthenticationSuccessHandler<br/>OAuth2登录成功处理器"]
 E["GatewayFilterConfig<br/>过滤器配置"]
 F["JwtClaimsHeaderFilter<br/>JWT用户信息提取"]
-G["application.yml<br/>路由/限流/跨域/监控配置"]
-H["bootstrap.yml<br/>Nacos服务发现配置"]
+G["ipKeyResolver<br/>IP限流KeyResolver"]
+H["application.yml<br/>路由/限流/跨域/监控配置"]
+I["bootstrap.yml<br/>Nacos服务发现配置"]
 end
 A --> B
 B --> C
 B --> D
 A --> E
 E --> F
-A --> G
+E --> G
 A --> H
+A --> I
 ```
 
 **图表来源**
@@ -80,15 +83,15 @@ A --> H
 - [GatewaySecurityConfig.java:1-131](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/GatewaySecurityConfig.java#L1-L131)
 - [JwtAuthenticationConverter.java:1-49](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/JwtAuthenticationConverter.java#L1-L49)
 - [GatewayAuthenticationSuccessHandler.java:1-37](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/GatewayAuthenticationSuccessHandler.java#L1-L37)
-- [GatewayFilterConfig.java:1-38](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L1-L38)
+- [GatewayFilterConfig.java:1-55](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L1-L55)
 - [JwtClaimsHeaderFilter.java:1-192](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/filter/JwtClaimsHeaderFilter.java#L1-L192)
-- [application.yml:1-142](file://iam-gateway/src/main/resources/application.yml#L1-L142)
-- [bootstrap.yml:1-10](file://iam-gateway/bootstrap.yml#L1-L10)
+- [application.yml:1-65](file://iam-gateway/src/main/resources/application.yml#L1-L65)
+- [bootstrap.yml:1-1](file://iam-gateway/src/main/resources/bootstrap.yml#L1-L1)
 
 **章节来源**
 - [IamGatewayApplication.java:1-15](file://iam-gateway/src/main/java/iam/platform/gateway/IamGatewayApplication.java#L1-L15)
-- [application.yml:1-142](file://iam-gateway/src/main/resources/application.yml#L1-L142)
-- [bootstrap.yml:1-10](file://iam-gateway/bootstrap.yml#L1-L10)
+- [application.yml:1-65](file://iam-gateway/src/main/resources/application.yml#L1-L65)
+- [bootstrap.yml:1-1](file://iam-gateway/src/main/resources/bootstrap.yml#L1-L1)
 
 ## 核心组件
 - 启动与发现
@@ -97,9 +100,10 @@ A --> H
   - OAuth2 客户端链：处理浏览器登录流程，放行登录相关路径，其余路径需认证
   - 资源服务器链：对受保护路径进行 JWT 验证，使用自定义认证转换器
   - 默认链：放行公开路径（如 /auth/**、/static/**、/error、/actuator/** 等）
-- **新增：过滤器配置**
-  - GatewayFilterConfig：管理WebFlux过滤器的注册与配置
+- **增强：过滤器配置**
+  - GatewayFilterConfig：管理WebFlux过滤器与KeyResolver Bean的注册
   - JwtClaimsHeaderFilter：从JWT令牌中提取用户和租户信息并添加标准HTTP头部
+  - **新增：ipKeyResolver Bean：基于客户端IP地址的限流KeyResolver**
 - 认证转换器
   - 从 JWT 提取角色集合，构造响应式认证主体，供后续权限校验使用
 - 配置中心与服务发现
@@ -109,9 +113,9 @@ A --> H
 - [IamGatewayApplication.java:1-15](file://iam-gateway/src/main/java/iam/platform/gateway/IamGatewayApplication.java#L1-L15)
 - [GatewaySecurityConfig.java:25-73](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/GatewaySecurityConfig.java#L25-L73)
 - [JwtAuthenticationConverter.java:15-49](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/JwtAuthenticationConverter.java#L15-L49)
-- [GatewayFilterConfig.java:15-38](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L15-L38)
+- [GatewayFilterConfig.java:15-55](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L15-L55)
 - [JwtClaimsHeaderFilter.java:20-50](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/filter/JwtClaimsHeaderFilter.java#L20-L50)
-- [bootstrap.yml:1-10](file://iam-gateway/bootstrap.yml#L1-L10)
+- [bootstrap.yml:1-1](file://iam-gateway/src/main/resources/bootstrap.yml#L1-L1)
 
 ## 架构总览
 下图展示了网关在 IAM 平台中的位置与交互关系：外部请求经由网关进入，网关根据路由规则转发至对应后端服务；同时在安全链路上完成 OAuth2 登录与 JWT 资源访问控制，并通过JwtClaimsHeaderFilter提取用户信息传递给下游服务。
@@ -123,6 +127,7 @@ GW --> SEC1["OAuth2客户端链<br/>浏览器登录"]
 GW --> SEC2["资源服务器链<br/>JWT验证"]
 GW --> DEF["默认链<br/>公开路径放行"]
 GW --> FIL["JwtClaimsHeaderFilter<br/>用户信息提取"]
+GW --> KR["ipKeyResolver<br/>IP限流KeyResolver"]
 GW --> R1["路由: /auth/** -> lb://iam-auth-service"]
 GW --> R2["路由: /admin/** -> lb://iam-admin-service"]
 GW --> R3["路由: Host=auth.iam.local -> lb://iam-auth-service"]
@@ -133,14 +138,16 @@ LB --> S2["iam-admin-service"]
 ```
 
 **图表来源**
-- [application.yml:14-80](file://iam-gateway/src/main/resources/application.yml#L14-L80)
+- [application.yml:1-65](file://iam-gateway/src/main/resources/application.yml#L1-L65)
 - [GatewaySecurityConfig.java:25-73](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/GatewaySecurityConfig.java#L25-L73)
 - [JwtClaimsHeaderFilter.java:20-50](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/filter/JwtClaimsHeaderFilter.java#L20-L50)
+- [GatewayFilterConfig.java:31-43](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L31-L43)
 
 **章节来源**
-- [application.yml:14-80](file://iam-gateway/src/main/resources/application.yml#L14-L80)
+- [application.yml:1-65](file://iam-gateway/src/main/resources/application.yml#L1-L65)
 - [GatewaySecurityConfig.java:25-73](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/GatewaySecurityConfig.java#L25-L73)
 - [JwtClaimsHeaderFilter.java:20-50](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/filter/JwtClaimsHeaderFilter.java#L20-L50)
+- [GatewayFilterConfig.java:31-43](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L31-L43)
 
 ## 详细组件分析
 
@@ -207,8 +214,8 @@ Err --> End
 - [GatewaySecurityConfig.java:45-59](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/GatewaySecurityConfig.java#L45-L59)
 - [JwtAuthenticationConverter.java:15-49](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/JwtAuthenticationConverter.java#L15-L49)
 
-### **新增：JwtClaimsHeaderFilter用户信息提取与传递**
-**更新** 新增JwtClaimsHeaderFilter组件，负责从JWT令牌中提取用户和租户信息并添加标准HTTP头部，增强跨服务通信能力。
+### **增强：JwtClaimsHeaderFilter用户信息提取与传递**
+**更新** 增强JwtClaimsHeaderFilter组件，负责从JWT令牌中提取用户和租户信息并添加标准HTTP头部，增强跨服务通信能力。
 
 - **过滤器执行时机**：运行在Spring Security过滤器之后、网关路由之前，确保JWT已验证且用户已认证
 - **支持的HTTP头部**：
@@ -244,7 +251,36 @@ Continue --> End(["请求转发到下游服务"])
 **章节来源**
 - [JwtClaimsHeaderFilter.java:20-50](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/filter/JwtClaimsHeaderFilter.java#L20-L50)
 - [JwtClaimsHeaderFilter.java:55-119](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/filter/JwtClaimsHeaderFilter.java#L55-L119)
-- [GatewayFilterConfig.java:15-38](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L15-L38)
+- [GatewayFilterConfig.java:15-55](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L15-L55)
+
+### **新增：IP-based KeyResolver Bean用于RequestRateLimiter**
+**更新** 新增ipKeyResolver Bean，为RequestRateLimiter提供基于客户端IP地址的限流策略。
+
+- **KeyResolver实现**：从请求的远程地址获取客户端IP，作为限流的唯一标识
+- **匿名请求支持**：对于无法获取IP的请求，使用"unknown"作为默认键值
+- **限流策略**：为匿名用户和未认证用户提供统一的IP级限流保护
+- **Bean注册**：通过GatewayFilterConfig自动注册为Spring Bean，供RequestRateLimiter过滤器使用
+
+```mermaid
+flowchart TD
+Start(["RequestRateLimiter触发"]) --> GetIP["从请求获取客户端IP"]
+GetIP --> HasIP{"IP是否存在?"}
+HasIP --> |是| UseIP["使用客户端IP作为限流键"]
+HasIP --> |否| UseUnknown["使用'unknown'作为默认键"]
+UseIP --> Limit["执行IP级限流检查"]
+UseUnknown --> Limit
+Limit --> Allow{"通过限流检查?"}
+Allow --> |是| Proceed["继续请求处理"]
+Allow --> |否| Reject["拒绝请求并返回429"]
+Proceed --> End(["请求继续"])
+Reject --> End
+```
+
+**图表来源**
+- [GatewayFilterConfig.java:31-43](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L31-L43)
+
+**章节来源**
+- [GatewayFilterConfig.java:31-43](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L31-L43)
 
 ### 路由规则与请求转发
 - 基于路径的路由
@@ -276,33 +312,34 @@ H2 --> |否| D["拒绝或返回404"]
 ```
 
 **图表来源**
-- [application.yml:18-80](file://iam-gateway/src/main/resources/application.yml#L18-L80)
+- [application.yml:1-65](file://iam-gateway/src/main/resources/application.yml#L1-L65)
 
 **章节来源**
-- [application.yml:18-80](file://iam-gateway/src/main/resources/application.yml#L18-L80)
+- [application.yml:1-65](file://iam-gateway/src/main/resources/application.yml#L1-L65)
 
 ### 限流保护（Redis Replenish Rate Limiter）
 - 在 /auth/**、/admin/** 与 /bff/** 路由上分别配置了 RequestRateLimiter 过滤器
 - 参数包括 replenishRate、burstCapacity、requestedTokens，用于限制并发与突发流量
 - 依赖 Redis 实现分布式限流
+- **新增：IP-based KeyResolver**：通过ipKeyResolver Bean实现基于客户端IP的统一限流策略
 
 **章节来源**
-- [application.yml:24-67](file://iam-gateway/src/main/resources/application.yml#L24-L67)
-- [pom.xml:54-58](file://iam-gateway/pom.xml#L54-L58)
+- [application.yml:1-65](file://iam-gateway/src/main/resources/application.yml#L1-L65)
+- [pom.xml:54-64](file://iam-gateway/pom.xml#L54-L64)
 
 ### 跨域与全局 CORS
 - 全局配置允许跨域请求，支持常见方法与头部，允许凭据，设置最大缓存时间
 - 适用于前端跨域访问网关接口
 
 **章节来源**
-- [application.yml:81-95](file://iam-gateway/src/main/resources/application.yml#L81-L95)
+- [application.yml:1-65](file://iam-gateway/src/main/resources/application.yml#L1-L65)
 
 ### 服务发现与配置中心
 - 通过 bootstrap.yml 指定 Nacos 地址、命名空间、分组及管理端点元数据
 - 网关可动态感知服务实例变化，配合负载均衡实现高可用
 
 **章节来源**
-- [bootstrap.yml:1-10](file://iam-gateway/bootstrap.yml#L1-L10)
+- [bootstrap.yml:1-1](file://iam-gateway/src/main/resources/bootstrap.yml#L1-L1)
 
 ### 监控与可观测性
 - 暴露 actuator 端点，包含 health、info、metrics、gateway、prometheus
@@ -310,7 +347,7 @@ H2 --> |否| D["拒绝或返回404"]
 - Zipkin 链路追踪，采样概率 1.0
 
 **章节来源**
-- [application.yml:119-142](file://iam-gateway/src/main/resources/application.yml#L119-L142)
+- [application.yml:42-58](file://iam-gateway/src/main/resources/application.yml#L42-L58)
 
 ## 依赖分析
 网关的核心依赖包括：
@@ -320,7 +357,8 @@ H2 --> |否| D["拒绝或返回404"]
 - Spring Security OAuth2 客户端与资源服务器
 - Spring Data Redis Reactive（限流）
 - Actuator、Prometheus、Zipkin
-- **新增：Jackson ObjectMapper（用于JSON序列化）**
+- **增强：Jackson ObjectMapper（用于JSON序列化）**
+- **新增：Lombok（用于代码简化）**
 
 ```mermaid
 graph TB
@@ -334,25 +372,27 @@ G --> AC["spring-boot-starter-actuator"]
 G --> PR["micrometer-registry-prometheus"]
 G --> ZK["micrometer-tracing-bridge-brave + zipkin-reporter-brave"]
 G --> JM["jackson-databind + jackson-datatype-jsr310"]
+G --> LBK["lombok"]
 ```
 
 **图表来源**
-- [pom.xml:17-106](file://iam-gateway/pom.xml#L17-L106)
+- [pom.xml:17-101](file://iam-gateway/pom.xml#L17-L101)
 
 **章节来源**
-- [pom.xml:17-106](file://iam-gateway/pom.xml#L17-L106)
+- [pom.xml:17-101](file://iam-gateway/pom.xml#L17-L101)
 
 ## 性能考虑
 - 响应式编程模型：基于 WebFlux，具备更好的背压与吞吐能力
 - 负载均衡：结合 Nacos 与 LoadBalancer，提升可用性与弹性
 - 限流：Redis Replenish Rate Limiter 降低后端压力，避免雪崩
-- **新增：过滤器性能**：JwtClaimsHeaderFilter采用异步处理，仅对已认证请求进行处理，避免不必要的计算开销
+- **增强：过滤器性能**：JwtClaimsHeaderFilter采用异步处理，仅对已认证请求进行处理，避免不必要的计算开销
+- **新增：KeyResolver性能**：ipKeyResolver使用简单的IP提取逻辑，性能开销极小
 - 监控：Prometheus 指标与 Zipkin 链路追踪，便于定位瓶颈
 - 日志：开启网关与安全日志级别，有助于问题定位
 
 **章节来源**
-- [application.yml:119-142](file://iam-gateway/src/main/resources/application.yml#L119-L142)
-- [pom.xml:54-80](file://iam-gateway/pom.xml#L54-L80)
+- [application.yml:42-58](file://iam-gateway/src/main/resources/application.yml#L42-L58)
+- [pom.xml:54-86](file://iam-gateway/pom.xml#L54-L86)
 
 ## 故障排查指南
 - 401 未授权
@@ -363,24 +403,30 @@ G --> JM["jackson-databind + jackson-datatype-jsr310"]
   - 检查服务是否注册到 Nacos，实例是否健康
 - 限流触发
   - 检查 Redis 连接与配置，核对 replenishRate/burstCapacity/requestedTokens 参数
+  - **新增：IP限流问题**：检查客户端IP提取是否正常，确认ipKeyResolver Bean是否正确注册
 - 登录流程异常
   - 检查 OAuth2 客户端注册与回调地址，确认登录成功处理器是否正确重定向
-- **新增：用户信息缺失**
+- **增强：用户信息缺失**
   - 检查JwtClaimsHeaderFilter是否正确执行，确认请求路径不在公共路径列表中
   - 验证JWT令牌中是否存在user_id、tenant_id等声明
   - 查看网关日志中关于用户信息提取的调试信息
+- **新增：过滤器配置问题**
+  - 检查GatewayFilterConfig是否正确注册了所有必要的Bean
+  - 确认ObjectMapper Bean的序列化配置是否正确
 
 **章节来源**
 - [GatewaySecurityConfig.java:78-129](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/GatewaySecurityConfig.java#L78-L129)
-- [application.yml:18-80](file://iam-gateway/src/main/resources/application.yml#L18-L80)
-- [pom.xml:54-58](file://iam-gateway/pom.xml#L54-L58)
+- [application.yml:1-65](file://iam-gateway/src/main/resources/application.yml#L1-L65)
+- [pom.xml:54-64](file://iam-gateway/pom.xml#L54-L64)
 
 ## 结论
 iam-gateway 作为 IAM 平台的统一入口，提供了完善的路由、负载均衡、安全过滤与限流能力。通过三层安全过滤链与 JWT 资源服务器验证，确保了访问控制与权限拦截的有效性；结合 Nacos 与 Redis，实现了高可用与弹性伸缩；Actuator、Prometheus 与 Zipkin 则为运维与监控提供了坚实基础。
 
-**新增的JwtClaimsHeaderFilter组件显著增强了网关的跨服务通信能力**，通过标准化的HTTP头部传递用户和租户信息，简化了下游服务的身份识别与权限验证过程。该组件在不影响现有安全机制的前提下，提供了透明的用户信息传递，是微服务架构中实现统一身份管理的重要基础设施。
+**增强的JwtClaimsHeaderFilter组件显著增强了网关的跨服务通信能力**，通过标准化的HTTP头部传递用户和租户信息，简化了下游服务的身份识别与权限验证过程。该组件在不影响现有安全机制的前提下，提供了透明的用户信息传递，是微服务架构中实现统一身份管理的重要基础设施。
 
-在微服务架构中，网关承担着"门面"与"安全边界"的双重职责，是保障系统稳定与安全的关键组件。随着JwtClaimsHeaderFilter的引入，网关不仅是一个路由和安全网关，更成为了统一身份信息传递的桥梁，为整个IAM平台的微服务生态提供了强有力的技术支撑。
+**新增的IP-based KeyResolver Bean进一步完善了网关的限流保护机制**，为匿名用户和未认证用户提供统一的IP级限流策略，增强了网关对恶意请求的防护能力。该实现简单高效，通过Bean注入的方式与RequestRateLimiter无缝集成。
+
+在微服务架构中，网关承担着"门面"与"安全边界"的双重职责，是保障系统稳定与安全的关键组件。随着JwtClaimsHeaderFilter和ipKeyResolver的引入，网关不仅是一个路由和安全网关，更成为了统一身份信息传递和流量控制的桥梁，为整个IAM平台的微服务生态提供了强有力的技术支撑。
 
 ## 附录
 
@@ -392,18 +438,21 @@ iam-gateway 作为 IAM 平台的统一入口，提供了完善的路由、负载
 - 扩展网关功能
   - 新增过滤器：在 GatewayFilterConfig 中注册新的WebFilter Bean
   - 新增安全链：在 GatewaySecurityConfig 中新增 SecurityWebFilterChain，并合理设置顺序
-  - **新增：用户信息处理**，利用JwtClaimsHeaderFilter提供的标准头部进行下游服务集成
+  - **增强：用户信息处理**，利用JwtClaimsHeaderFilter提供的标准头部进行下游服务集成
+  - **新增：自定义KeyResolver**，通过GatewayFilterConfig注册新的KeyResolver Bean以支持不同的限流策略
 - 安全加固
   - 严格限定公开路径范围，避免泄露内部接口
   - 启用 HTTPS 与强密码策略，确保传输安全
-  - **新增：用户信息保护**，确保敏感用户信息仅在必要时传递
+  - **增强：用户信息保护**，确保敏感用户信息仅在必要时传递
+  - **新增：限流策略定制**，根据不同业务场景调整IP限流参数
 - 监控与告警
   - 关注网关指标（请求量、错误率、延迟、限流命中率）
   - 结合 Zipkin 进行端到端链路追踪，定位慢调用与异常
-  - **新增：用户信息处理监控**，跟踪JwtClaimsHeaderFilter的执行情况与性能影响
+  - **增强：用户信息处理监控**，跟踪JwtClaimsHeaderFilter的执行情况与性能影响
+  - **新增：限流监控**，关注IP限流的命中率和异常情况
 
 **章节来源**
-- [application.yml:14-95](file://iam-gateway/src/main/resources/application.yml#L14-L95)
+- [application.yml:1-65](file://iam-gateway/src/main/resources/application.yml#L1-L65)
 - [GatewaySecurityConfig.java:25-73](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/security/GatewaySecurityConfig.java#L25-L73)
-- [GatewayFilterConfig.java:15-38](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L15-L38)
-- [pom.xml:54-80](file://iam-gateway/pom.xml#L54-L80)
+- [GatewayFilterConfig.java:15-55](file://iam-gateway/src/main/java/iam/platform/gateway/infrastructure/config/GatewayFilterConfig.java#L15-L55)
+- [pom.xml:54-86](file://iam-gateway/pom.xml#L54-L86)

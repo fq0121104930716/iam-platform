@@ -17,24 +17,36 @@
 - [views/UserList.vue](file://iam-admin-ui/src/views/UserList.vue)
 - [views/ApplicationList.vue](file://iam-admin-ui/src/views/ApplicationList.vue)
 - [views/RoleList.vue](file://iam-admin-ui/src/views/RoleList.vue)
+- [Dockerfile](file://iam-admin-ui/Dockerfile)
+- [nginx.conf](file://iam-admin-ui/nginx.conf)
+- [docker-compose.ui.yml](file://docker-compose.ui.yml)
 </cite>
+
+## 更新摘要
+**所做更改**
+- 新增容器化部署章节，详细介绍两阶段Docker构建和Nginx配置
+- 更新项目结构图，包含新的Docker容器化架构
+- 新增Vue Router历史模式支持说明
+- 更新架构概览，反映独立UI服务的部署模式
+- 新增容器化服务配置和部署指南
 
 ## 目录
 1. [简介](#简介)
 2. [项目结构](#项目结构)
 3. [核心组件](#核心组件)
 4. [架构概览](#架构概览)
-5. [详细组件分析](#详细组件分析)
-6. [依赖关系分析](#依赖关系分析)
-7. [性能考虑](#性能考虑)
-8. [故障排除指南](#故障排除指南)
-9. [结论](#结论)
+5. [容器化部署](#容器化部署)
+6. [详细组件分析](#详细组件分析)
+7. [依赖关系分析](#依赖关系分析)
+8. [性能考虑](#性能考虑)
+9. [故障排除指南](#故障排除指南)
+10. [结论](#结论)
 
 ## 简介
 
 这是一个基于Vue.js 3构建的企业级身份认证管理平台前端界面。该管理界面提供了完整的IAM（身份和访问管理）功能，包括用户管理、租户管理、应用管理和角色权限管理等核心功能模块。
 
-项目采用现代化的前端技术栈，使用Vue 3 Composition API、Element Plus UI组件库、Pinia状态管理和Vite构建工具，为企业级应用提供了高效、可维护的前端解决方案。
+项目采用现代化的前端技术栈，使用Vue 3 Composition API、Element Plus UI组件库、Pinia状态管理和Vite构建工具，为企业级应用提供了高效、可维护的前端解决方案。**新增** 系统现已支持独立的UI容器化服务部署，包含两阶段Docker构建和Nginx配置，提供更好的可扩展性和部署灵活性。
 
 ## 项目结构
 
@@ -44,28 +56,38 @@ subgraph "Vue.js管理界面结构"
 A[iam-admin-ui/] --> B[src/]
 A --> C[package.json]
 A --> D[vite.config.js]
-B --> E[api/]
-B --> F[components/]
-B --> G[router/]
-B --> H[stores/]
-B --> I[views/]
-B --> J[main.js]
-B --> K[App.vue]
-E --> L[admin.js]
-E --> M[index.js]
-F --> N[layout/]
-F --> O[layout/AdminLayout.vue]
-F --> P[layout/SidebarMenu.vue]
-F --> Q[layout/TenantSwitcher.vue]
-G --> R[router/index.js]
-H --> S[auth.js]
-H --> T[tenant.js]
-I --> U[Login.vue]
-I --> V[Dashboard.vue]
-I --> W[TenantList.vue]
-I --> X[UserList.vue]
-I --> Y[ApplicationList.vue]
-I --> Z[RoleList.vue]
+A --> E[Dockerfile]
+B --> F[api/]
+B --> G[components/]
+B --> H[router/]
+B --> I[stores/]
+B --> J[views/]
+B --> K[main.js]
+B --> L[App.vue]
+F --> M[admin.js]
+F --> N[index.js]
+G --> O[layout/]
+G --> P[layout/AdminLayout.vue]
+G --> Q[layout/SidebarMenu.vue]
+G --> R[layout/TenantSwitcher.vue]
+H --> S[router/index.js]
+I --> T[auth.js]
+I --> U[tenant.js]
+J --> V[Login.vue]
+J --> W[Dashboard.vue]
+J --> X[TenantList.vue]
+J --> Y[UserList.vue]
+J --> Z[ApplicationList.vue]
+J --> AA[RoleList.vue]
+end
+subgraph "容器化部署结构"
+BB[Dockerfile] --> CC[Stage 1: Node.js构建]
+BB --> DD[Stage 2: Nginx服务]
+EE[nginx.conf] --> FF[Vue Router支持]
+EE --> GG[API代理配置]
+EE --> HH[静态资源缓存]
+II[docker-compose.ui.yml] --> JJ[iam-admin-ui服务]
+JJ --> KK[端口映射: 3000:80]
 end
 ```
 
@@ -73,11 +95,15 @@ end
 - [package.json:1-28](file://iam-admin-ui/package.json#L1-L28)
 - [main.js:1-21](file://iam-admin-ui/src/main.js#L1-L21)
 - [router/index.js:1-72](file://iam-admin-ui/src/router/index.js#L1-L72)
+- [Dockerfile:1-15](file://iam-admin-ui/Dockerfile#L1-L15)
+- [nginx.conf:1-37](file://iam-admin-ui/nginx.conf#L1-L37)
 
 **章节来源**
 - [package.json:1-28](file://iam-admin-ui/package.json#L1-L28)
 - [vite.config.js:1-26](file://iam-admin-ui/vite.config.js#L1-L26)
 - [main.js:1-21](file://iam-admin-ui/src/main.js#L1-L21)
+- [Dockerfile:1-15](file://iam-admin-ui/Dockerfile#L1-L15)
+- [nginx.conf:1-37](file://iam-admin-ui/nginx.conf#L1-L37)
 
 ## 核心组件
 
@@ -87,7 +113,7 @@ end
 
 ### 路由系统
 
-使用Vue Router 4实现前端路由管理，支持嵌套路由和导航守卫。
+使用Vue Router 4实现前端路由管理，支持嵌套路由和导航守卫。**更新** 新增Vue Router历史模式支持，通过Nginx配置实现单页应用的URL重写功能。
 
 ### 状态管理
 
@@ -114,15 +140,22 @@ C --> H[租户状态]
 D --> I[路由守卫]
 D --> J[导航控制]
 end
+subgraph "容器化部署层"
+K[iam-admin-ui容器] --> L[Nginx服务器]
+K --> M[Node.js构建环境]
+L --> N[Vue Router历史模式]
+L --> O[API代理到网关]
+M --> P[Vite构建产物]
+end
 subgraph "API通信层"
-F --> K[Admin API]
-K --> L[后端服务]
+F --> Q[Admin API]
+Q --> R[后端服务]
 end
 subgraph "UI组件库"
-E --> M[Element Plus]
-F --> M
-G --> M
-H --> M
+E --> S[Element Plus]
+F --> S
+G --> S
+H --> S
 end
 ```
 
@@ -130,6 +163,62 @@ end
 - [App.vue:1-25](file://iam-admin-ui/src/App.vue#L1-L25)
 - [components/layout/AdminLayout.vue:1-118](file://iam-admin-ui/src/components/layout/AdminLayout.vue#L1-L118)
 - [api/admin.js:1-145](file://iam-admin-ui/src/api/admin.js#L1-L145)
+- [Dockerfile:1-15](file://iam-admin-ui/Dockerfile#L1-L15)
+- [nginx.conf:1-37](file://iam-admin-ui/nginx.conf#L1-L37)
+
+## 容器化部署
+
+**新增** 系统现已支持独立的UI容器化服务部署，提供更好的可扩展性和部署灵活性。
+
+### 两阶段Docker构建
+
+系统采用两阶段Docker构建策略，优化镜像大小和构建效率：
+
+```mermaid
+sequenceDiagram
+participant A as 开发者
+participant B as 第一阶段构建
+participant C as 第二阶段构建
+participant D as 最终镜像
+A->>B : docker build
+B->>B : 安装Node.js依赖
+B->>B : 复制源代码
+B->>B : 执行Vite构建
+B->>C : 生成构建产物
+C->>C : 复制Nginx基础镜像
+C->>C : 复制构建产物到HTML目录
+C->>C : 配置Nginx配置文件
+C->>D : 创建最终精简镜像
+D-->>A : 可运行的UI容器
+```
+
+**图表来源**
+- [Dockerfile:1-15](file://iam-admin-ui/Dockerfile#L1-L15)
+
+### Nginx配置详解
+
+最终的Nginx配置文件提供了完整的单页应用支持：
+
+#### Vue Router历史模式支持
+- 使用`try_files`指令处理前端路由
+- 将所有未匹配的请求重定向到`index.html`
+- 支持深度链接和书签功能
+
+#### API代理配置
+- `/api/`路径代理到网关服务
+- `/bff/`路径代理到网关服务  
+- 保留原始请求头信息
+- 支持HTTPS和HTTP混合场景
+
+#### 静态资源优化
+- 启用1年缓存策略
+- 支持各种静态资源格式
+- 添加Cache-Control头部
+
+**章节来源**
+- [Dockerfile:1-15](file://iam-admin-ui/Dockerfile#L1-L15)
+- [nginx.conf:1-37](file://iam-admin-ui/nginx.conf#L1-L37)
+- [docker-compose.ui.yml:1-18](file://docker-compose.ui.yml#L1-L18)
 
 ## 详细组件分析
 
@@ -311,10 +400,16 @@ subgraph "运行时依赖"
 O[Axios 1.6.5] --> P[HTTP客户端]
 Q[@element-plus/icons-vue 2.3.1] --> R[图标组件]
 end
+subgraph "容器化依赖"
+S[Docker] --> T[两阶段构建]
+U[Nginx] --> V[静态服务]
+W[Node.js] --> X[构建环境]
+end
 ```
 
 **图表来源**
 - [package.json:12-26](file://iam-admin-ui/package.json#L12-L26)
+- [Dockerfile:2-14](file://iam-admin-ui/Dockerfile#L2-L14)
 
 **章节来源**
 - [package.json:1-28](file://iam-admin-ui/package.json#L1-L28)
@@ -325,16 +420,25 @@ end
 - 使用Vite进行快速开发和生产构建
 - 按需加载路由组件，减少初始包大小
 - Element Plus按需引入，避免全量导入
+- **新增** 两阶段Docker构建，优化镜像大小
 
 ### 运行时优化
 - Pinia状态管理提供响应式数据绑定
 - Element Plus组件懒加载，提升首屏渲染速度
 - API请求缓存策略，减少重复网络请求
+- **新增** Nginx静态资源缓存，提升CDN友好性
 
 ### 开发体验
 - ESLint代码规范检查
 - Sass样式预处理，提高样式开发效率
 - 开发服务器代理配置，简化API调试
+- **新增** 独立UI容器化部署，支持快速扩展
+
+### 容器化优化
+- **新增** 第一阶段使用轻量级Node.js Alpine镜像进行构建
+- **新增** 第二阶段使用超精简Nginx Alpine镜像提供服务
+- **新增** Nginx配置优化，支持Vue Router历史模式
+- **新增** API代理配置，简化前后端分离部署
 
 ## 故障排除指南
 
@@ -349,35 +453,56 @@ end
 - 检查路由守卫逻辑
 - 验证token存在性
 - 确认路由元信息配置
+- **新增** 检查Nginx配置是否正确处理Vue Router历史模式
 
 **API调用问题**
 - 检查代理配置是否正确
 - 验证后端接口响应格式
 - 查看网络面板的请求状态
+- **新增** 检查Docker网络连接和端口映射
+
+**容器化部署问题**
+- **新增** 检查Docker构建日志，确认两阶段构建成功
+- **新增** 验证Nginx配置语法和端口监听
+- **新增** 确认容器间网络通信和服务发现
+- **新增** 检查静态资源路径和缓存配置
 
 **章节来源**
 - [router/index.js:62-69](file://iam-admin-ui/src/router/index.js#L62-L69)
 - [stores/auth.js:14-30](file://iam-admin-ui/src/stores/auth.js#L14-L30)
+- [nginx.conf:8-20](file://iam-admin-ui/nginx.conf#L8-L20)
+- [Dockerfile:1-15](file://iam-admin-ui/Dockerfile#L1-L15)
 
 ## 结论
 
-Vue.js管理界面是一个功能完整、架构清晰的企业级身份认证管理平台前端解决方案。项目采用了现代化的前端技术栈，具有以下特点：
+Vue.js管理界面是一个功能完整、架构清晰的企业级身份认证管理平台前端解决方案。**更新** 系统现已支持独立的UI容器化服务部署，具有以下显著优势：
 
 **技术优势**
 - 基于Vue 3 Composition API，提供更好的代码组织和复用
 - 使用Element Plus UI组件库，确保界面一致性和用户体验
 - Pinia状态管理提供简单直观的状态管理方案
 - Vite构建工具带来快速的开发体验
+- **新增** 两阶段Docker构建，优化镜像大小和构建效率
+- **新增** Nginx配置支持Vue Router历史模式，提供完整的SPA体验
 
 **功能完整性**
 - 支持完整的用户、租户、应用和角色管理
 - 提供多租户架构支持
 - 包含丰富的认证协议配置
 - 具备完善的权限管理体系
+- **新增** 独立UI服务部署，支持水平扩展
 
 **扩展性**
 - 模块化设计便于功能扩展
 - 清晰的组件层次结构
 - 完善的API接口定义
+- **新增** 容器化部署架构，支持微服务模式
+- **新增** 独立服务解耦，便于团队协作和版本管理
 
-该管理界面为后续的功能扩展和维护提供了良好的基础，能够满足企业级身份认证管理的各种需求。
+**部署灵活性**
+- **新增** 支持独立UI容器化部署
+- **新增** Docker Compose配置，简化部署流程
+- **新增** Nginx反向代理配置，支持生产环境部署
+- **新增** 多环境配置支持，适应不同部署场景
+
+该管理界面为后续的功能扩展和维护提供了良好的基础，能够满足企业级身份认证管理的各种需求，并且具备了现代化微服务架构的部署能力。
