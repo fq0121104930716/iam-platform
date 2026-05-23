@@ -1,5 +1,5 @@
 ﻿server:
-  port: 9000
+  port: 9001
   ssl:
     enabled: ${SSL_ENABLED:false}
     key-store: ${SSL_KEY_STORE:file:${user.dir}/ssl/keystore.p12}
@@ -66,13 +66,16 @@ spring:
             token-uri: https://api.dingtalk.com/v1.0/oauth2/userAccessToken
             user-info-uri: https://api.dingtalk.com/v1.0/contact/users/me
             user-name-attribute: unionId
-    jwk:
-      rsa:
-        private-key-location: ${JWK_RSA_PRIVATE_KEY:file:${user.dir}/ssl/private.key}
-        public-key-location: ${JWK_RSA_PUBLIC_KEY:file:${user.dir}/ssl/certificate.crt}
-    encryption:
-      key: ${ENCRYPTION_KEY:}
-    issuer-uri: ${OIDC_ISSUER_URI:https://localhost:9000}
+
+# Security - JWK & encryption settings (independent namespace to avoid Spring Security binding conflicts)
+security:
+  jwk:
+    rsa:
+      private-key-location: ${JWK_RSA_PRIVATE_KEY:classpath:keys/private.pem}
+      public-key-location: ${JWK_RSA_PUBLIC_KEY:classpath:keys/public.pem}
+  encryption:
+    key: ${ENCRYPTION_KEY:}
+  issuer-uri: ${OIDC_ISSUER_URI:https://localhost:9001}
 
 # RocketMQ configuration
 # NOTE: host.docker.internal only works on Docker Desktop (Windows/macOS).
@@ -125,12 +128,12 @@ sso:
 
   # CAS (Central Authentication Service) configuration
   cas:
-    server-url: ${CAS_SERVER_URL:https://localhost:9000/cas}
+    server-url: ${CAS_SERVER_URL:https://localhost:9001/cas}
     ticket-validity-seconds: ${CAS_TICKET_VALIDITY:600}
     ticket-prefix: ${CAS_TICKET_PREFIX:ST}
     single-sign-out-enabled: ${CAS_SLO_ENABLED:true}
-    logout-url: ${CAS_LOGOUT_URL:https://localhost:9000/cas/logout}
-    login-url: ${CAS_LOGIN_URL:https://localhost:9000/cas/login}
+    logout-url: ${CAS_LOGOUT_URL:https://localhost:9001/cas/logout}
+    login-url: ${CAS_LOGIN_URL:https://localhost:9001/cas/login}
     front-channel-logout-enabled: ${CAS_FRONT_CHANNEL_LOGOUT:true}
     back-channel-logout-enabled: ${CAS_BACK_CHANNEL_LOGOUT:true}
     logout-request-ttl-seconds: ${CAS_LOGOUT_TTL:300}
@@ -138,8 +141,8 @@ sso:
 
   # SAML 2.0 IdP configuration
   saml:
-    entity-id: ${SAML_ENTITY_ID:https://localhost:9000/saml/metadata}
-    sso-url: ${SAML_SSO_URL:https://localhost:9000/saml/sso}
+    entity-id: ${SAML_ENTITY_ID:https://localhost:9001/saml/metadata}
+    sso-url: ${SAML_SSO_URL:https://localhost:9001/saml/sso}
     assertion-validity-minutes: ${SAML_ASSERTION_VALIDITY:5}
     signature-algorithm: ${SAML_SIGNATURE_ALGO:http://www.w3.org/2001/04/xmldsig-more#rsa-sha256}
     name-id-format: ${SAML_NAME_ID_FORMAT:urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress}
@@ -149,7 +152,7 @@ sso:
 
 management:
   server:
-    port: 9001
+    port: 9005
   endpoints:
     web:
       exposure:

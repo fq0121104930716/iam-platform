@@ -168,7 +168,7 @@ public class AuditApplicationService {
         try (PrintWriter writer = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
             // Header
             writer.println(
-                    "ID,TenantID,PersonID,Username,EventType,EventCategory,ResourceType,ResourceID,Action,IPAddress,UserAgent,RequestURI,Result,ErrorMessage,CreatedAt");
+                    "ID,TenantID,UserId,Username,EventType,EventCategory,ResourceType,ResourceID,Action,IPAddress,UserAgent,RequestURI,Result,ErrorMessage,CreatedAt");
 
             // Data rows
             for (AuditLog log : allLogs) {

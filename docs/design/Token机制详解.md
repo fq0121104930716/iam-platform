@@ -70,7 +70,7 @@ sequenceDiagram
 {
   // 标准 OIDC Claims
   "iss": "http://localhost:9000",
-  "sub": "person-uuid-123",
+  "sub": "user-uuid-123",
   "aud": "client-id-abc",
   "exp": 1704067200,
   "iat": 1704063600,
@@ -80,7 +80,7 @@ sequenceDiagram
   // 自定义 Claims (根据 scope)
   "email": "user@example.com",
   "nickname": "张三",
-  "person_id": 123
+  "user_id": 123
 }
 .
 [Signature]
@@ -97,7 +97,7 @@ sequenceDiagram
 {
   // 标准 OAuth2 Claims
   "iss": "http://localhost:9000",
-  "sub": "person-uuid-123",
+  "sub": "user-uuid-123",
   "aud": "client-id-abc",
   "exp": 1704067200,
   "iat": 1704063600,
@@ -140,7 +140,7 @@ sequenceDiagram
 
 #### 1. 框架配置
 
-[AuthorizationServerConfig.java](file:///d:/VsCodeProject/iam-platform/sso-auth-server/src/main/java/sso/oidc/auth/infrastructure/config/AuthorizationServerConfig.java)
+[AuthorizationServerConfig.java](file:///d:/VsCodeProject/iam-platform/iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/AuthorizationServerConfig.java)
 
 ```java
 @Configuration
@@ -178,46 +178,46 @@ public class AuthorizationServerConfig {
 
 #### 2. 自定义 Claims
 
-[TokenCustomizer.java](file:///d:/VsCodeProject/iam-platform/sso-auth-server/src/main/java/sso/oidc/auth/infrastructure/security/TokenCustomizer.java)
+[TokenCustomizer.java](file:///d:/VsCodeProject/iam-platform/iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/TokenCustomizer.java)
 
 ```java
 @Component
 @RequiredArgsConstructor
 public class TokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {
     
-    private final PersonRepository personRepository;
+    private final UserRepository userRepository;
     private final TenantAccountRepository tenantAccountRepository;
     private final TenantAccountRoleApplicationService tenantAccountRoleService;
     
     @Override
     public void customize(JwtEncodingContext context) {
         String username = context.getPrincipal().getName();
-        Person person = personRepository.findByUsername(username).orElse(null);
+        User user = userRepository.findByUsername(username).orElse(null);
         
-        if (person == null) {
+        if (user == null) {
             return;
         }
         
         // 添加基本用户信息
-        context.getClaims().claim("email", person.getEmail());
-        if (person.getNickname() != null) {
-            context.getClaims().claim("nickname", person.getNickname());
+        context.getClaims().claim("email", user.getEmail());
+        if (user.getNickname() != null) {
+            context.getClaims().claim("nickname", user.getNickname());
         }
-        context.getClaims().claim("person_id", person.getId());
+        context.getClaims().claim("user_id", user.getId());
         
         // 添加租户上下文
         Long tenantId = TenantContext.getCurrentTenantId();
         Long tenantAccountId = TenantContext.getCurrentTenantAccountId();
         
         if (tenantId != null && tenantAccountId != null) {
-            addTenantClaims(context, tenantId, tenantAccountId, person);
+            addTenantClaims(context, tenantId, tenantAccountId, user);
         } else {
-            addAllTenantAccountsClaims(context, person);
+            addAllTenantAccountsClaims(context, user);
         }
     }
     
     private void addTenantClaims(JwtEncodingContext context, Long tenantId, 
-                                  Long tenantAccountId, Person person) {
+                                  Long tenantAccountId, User user) {
         context.getClaims().claim("tenant_id", tenantId);
         context.getClaims().claim("tenant_account_id", tenantAccountId);
         
@@ -279,7 +279,7 @@ graph TD
 | Claim | 类型 | 说明 | 示例值 | 来源 |
 |-------|------|------|--------|------|
 | **iss** | String | Issuer (签发者) | `http://localhost:9000` | `application.yml` 的 `issuer-uri` |
-| **sub** | String | Subject (用户唯一标识) | `person-uuid-123` | `Authentication.getPrincipal()` |
+| **sub** | String | Subject (用户唯一标识) | `user-uuid-123` | `Authentication.getPrincipal()` |
 | **aud** | String | Audience (受众) | `client-id-abc` | 客户端注册 ID |
 | **exp** | Number | Expiration Time (过期时间) | `1704067200` | 配置的 TTL |
 | **iat** | Number | Issued At (签发时间) | `1704063600` | 当前时间戳 |
@@ -301,7 +301,7 @@ graph TD
 
 ### 配置来源
 
-[application.yml](file:///d:/VsCodeProject/iam-platform/sso-auth-server/src/main/resources/application.yml)
+[application.yml](file:///d:/VsCodeProject/iam-platform/iam-auth-server/src/main/resources/application.yml)
 
 ```yaml
 spring:
@@ -322,7 +322,7 @@ spring:
 |-------|------|------|---------|
 | **email** | String | 用户邮箱 | 总是添加 |
 | **nickname** | String | 用户昵称 | 当 nickname 不为 null 时 |
-| **person_id** | Long | 自然人 ID | 总是添加 |
+| **user_id** | Long | 用户 ID | 总是添加 |
 | **tenant_id** | Long | 租户 ID | 根据租户上下文 |
 | **tenant_code** | String | 租户编码 | 当有租户上下文时 |
 | **tenant_account_id** | Long | 租户账号 ID | 根据租户上下文 |
@@ -337,7 +337,7 @@ spring:
 {
   // === 框架自动添加的标准 Claims ===
   "iss": "http://localhost:9000",
-  "sub": "person-uuid-123",
+  "sub": "user-uuid-123",
   "aud": "client-id-abc",
   "exp": 1704067200,
   "iat": 1704063600,
@@ -350,7 +350,7 @@ spring:
   // === TokenCustomizer 添加的业务 Claims ===
   "email": "zhangsan@company.com",
   "nickname": "张三",
-  "person_id": 123,
+  "user_id": 123,
   "tenant_id": 456,
   "tenant_code": "company-a",
   "tenant_account_id": 789,
@@ -387,28 +387,28 @@ spring:
 public void customize(JwtEncodingContext context) {
     Set<String> scopes = context.getAuthorizedScopes();
     String username = context.getPrincipal().getName();
-    Person person = personRepository.findByUsername(username).orElse(null);
+    User user = userRepository.findByUsername(username).orElse(null);
     
-    if (person == null) {
+    if (user == null) {
         return;
     }
     
     // 只在请求 openid 时添加基本标识
     if (scopes.contains("openid")) {
-        context.getClaims().claim("person_id", person.getId());
+        context.getClaims().claim("user_id", user.getId());
     }
     
     // 只在请求 profile 时添加个人信息和租户信息
     if (scopes.contains("profile")) {
-        if (person.getNickname() != null) {
-            context.getClaims().claim("nickname", person.getNickname());
+        if (user.getNickname() != null) {
+            context.getClaims().claim("nickname", user.getNickname());
         }
         addTenantClaims(context, ...);
     }
     
     // 只在请求 email 时添加邮箱
     if (scopes.contains("email")) {
-        context.getClaims().claim("email", person.getEmail());
+        context.getClaims().claim("email", user.getEmail());
     }
 }
 ```
@@ -504,8 +504,8 @@ sso:
 ```
 
 密钥文件位置：
-- 私钥：[keys/private.pem](file:///d:/VsCodeProject/iam-platform/sso-auth-server/src/main/resources/keys/private.pem)
-- 公钥：[keys/public.pem](file:///d:/VsCodeProject/iam-platform/sso-auth-server/src/main/resources/keys/public.pem)
+- 私钥：[keys/private.pem](file:///d:/VsCodeProject/iam-platform/iam-auth-server/src/main/resources/keys/private.pem)
+- 公钥：[keys/public.pem](file:///d:/VsCodeProject/iam-platform/iam-auth-server/src/main/resources/keys/public.pem)
 
 #### PROD 环境
 

@@ -14,6 +14,17 @@ spring:
   thymeleaf:
     cache: false
 
+# OAuth2 social login dev settings
+# Use placeholder values to prevent startup failure when env vars are not set.
+# DingTalk login will only work if real credentials are provided via env vars.
+  security:
+    oauth2:
+      client:
+        registration:
+          dingtalk:
+            client-id: ${DINGTALK_CLIENT_ID:dev-placeholder}
+            client-secret: ${DINGTALK_CLIENT_SECRET:dev-placeholder}
+
 # Verification code dev settings
 verification-code:
   sms:

@@ -170,7 +170,7 @@ curl.exe http://localhost:9000/v1/users `
 ## 关键配置点
 
 ### 1. JWT 解码器配置
-位置：[AuthorizationServerConfig.java](file:///d:/VsCodeProject/iam-platform/src/main/java/sso/oidc/infrastructure/config/AuthorizationServerConfig.java#L84-L86)
+位置：[AuthorizationServerConfig.java](file:///d:/VsCodeProject/iam-platform/iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/AuthorizationServerConfig.java)
 
 ```java
 @Bean
@@ -180,19 +180,19 @@ public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
 ```
 
 ### 2. JWK 密钥源配置
-位置：[AuthorizationServerConfig.java](file:///d:/VsCodeProject/iam-platform/src/main/java/sso/oidc/infrastructure/config/AuthorizationServerConfig.java#L60-L81)
+位置：[AuthorizationServerConfig.java](file:///d:/VsCodeProject/iam-platform/iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/AuthorizationServerConfig.java)
 
 从 PEM 文件加载 RSA 密钥对，生成稳定的 KeyID
 
 ### 3. Resource Server 启用
-位置：[AuthorizationServerConfig.java](file:///d:/VsCodeProject/iam-platform/src/main/java/sso/oidc/infrastructure/config/AuthorizationServerConfig.java#L54)
+位置：[AuthorizationServerConfig.java](file:///d:/VsCodeProject/iam-platform/iam-auth-server/src/main/java/iam/platform/auth/infrastructure/config/AuthorizationServerConfig.java)
 
 ```java
 http.oauth2ResourceServer(rs -> rs.jwt(Customizer.withDefaults()));
 ```
 
 ### 4. Token 自定义
-位置：[TokenCustomizer.java](file:///d:/VsCodeProject/iam-platform/src/main/java/sso/oidc/infrastructure/security/TokenCustomizer.java)
+位置：[TokenCustomizer.java](file:///d:/VsCodeProject/iam-platform/iam-auth-server/src/main/java/iam/platform/auth/infrastructure/security/TokenCustomizer.java)
 
 在 Token 中添加自定义 Claims：email、nickname、roles
 

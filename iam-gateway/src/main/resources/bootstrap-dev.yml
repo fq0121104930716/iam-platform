@@ -44,6 +44,7 @@ spring:
           predicates:
             - Path=/auth/**
           filters:
+            - StripPrefix=1
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 100
@@ -56,6 +57,7 @@ spring:
           predicates:
             - Path=/admin/**
           filters:
+            - StripPrefix=1
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter.replenishRate: 50

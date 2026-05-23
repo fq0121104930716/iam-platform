@@ -63,7 +63,7 @@ springdoc:
 
 management:
   server:
-    port: 9003
+    port: 9006
   endpoints:
     web:
       exposure:

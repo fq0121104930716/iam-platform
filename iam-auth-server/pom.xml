@@ -54,6 +54,12 @@
             <artifactId>spring-session-data-redis</artifactId>
         </dependency>
 
+        <!-- Spring Cloud Bootstrap -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
+
         <!-- Nacos Discovery -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
@@ -70,6 +76,10 @@
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
         <!-- Spring Authorization Server (OIDC Provider) -->
@@ -102,6 +112,22 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-cas</artifactId>
+            <exclusions>
+                <!-- Exclude deprecated jdk15on variants; project uses jdk18on via
+                dependencyManagement -->
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcpkix-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcutil-jdk15on</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Spring Security LDAP (for enterprise AD directory authentication) -->

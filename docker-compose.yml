@@ -4,6 +4,7 @@
 # 此文件用于同时启动中间件和应用服务
 # 如果只需要启动中间件,请使用: docker-compose -f docker-compose.middleware.yml up -d
 # 如果只需要启动应用,请使用: docker-compose -f docker-compose.app.yml up -d
+# 如果只需要启动前端UI,请使用: docker-compose -f docker-compose.ui.yml up -d
 # ============================================
 
 services:

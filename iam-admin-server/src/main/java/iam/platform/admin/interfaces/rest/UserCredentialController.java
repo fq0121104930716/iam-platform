@@ -35,8 +35,7 @@ public class UserCredentialController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create credential for user")
-    public ApiResponse<UserCredentialResponse> createCredential(
-            @PathVariable Long userId,
+    public ApiResponse<UserCredentialResponse> createCredential(@PathVariable Long userId,
             @Valid @RequestBody CreateUserCredentialRequest request) {
         return ApiResponse.created(credentialService.createCredential(userId, request));
     }
@@ -50,30 +49,24 @@ public class UserCredentialController {
     @GetMapping
     @Operation(summary = "List user credentials")
     public ApiResponse<PageResponse<UserCredentialResponse>> listCredentials(
-            @PathVariable Long userId,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PathVariable Long userId, @PageableDefault(size = 20) Pageable pageable) {
         var pageResult = credentialService.listCredentials(userId, pageable);
-        return ApiResponse.success(PageResponse.of(
-                pageResult.getContent(),
-                pageResult.getNumber(),
-                pageResult.getSize(),
-                pageResult.getTotalElements()
-        ));
+        return ApiResponse.success(PageResponse.of(pageResult.getContent(), pageResult.getNumber(),
+                pageResult.getSize(), pageResult.getTotalElements()));
     }
 
     @PutMapping("/{credentialId}")
     @Operation(summary = "Update credential")
-    public ApiResponse<UserCredentialResponse> updateCredential(
-            @PathVariable Long userId,
+    public ApiResponse<UserCredentialResponse> updateCredential(@PathVariable Long userId,
             @PathVariable Long credentialId,
             @Valid @RequestBody UpdateUserCredentialRequest request) {
-        return ApiResponse.success(credentialService.updateCredential(userId, credentialId, request));
+        return ApiResponse
+                .success(credentialService.updateCredential(userId, credentialId, request));
     }
 
     @PutMapping("/{credentialId}/primary")
     @Operation(summary = "Set credential as primary")
-    public ApiResponse<Void> setPrimary(
-            @PathVariable Long userId,
+    public ApiResponse<Void> setPrimary(@PathVariable Long userId,
             @PathVariable Long credentialId) {
         credentialService.setPrimary(userId, credentialId);
         return ApiResponse.success(null);
@@ -81,8 +74,7 @@ public class UserCredentialController {
 
     @PutMapping("/{credentialId}/revoke")
     @Operation(summary = "Revoke credential")
-    public ApiResponse<Void> revokeCredential(
-            @PathVariable Long userId,
+    public ApiResponse<Void> revokeCredential(@PathVariable Long userId,
             @PathVariable Long credentialId) {
         credentialService.revokeCredential(userId, credentialId);
         return ApiResponse.success(null);
@@ -90,17 +82,15 @@ public class UserCredentialController {
 
     @DeleteMapping("/{credentialId}")
     @Operation(summary = "Delete credential")
-    public ApiResponse<Void> deleteCredential(
-            @PathVariable Long userId,
+    public ApiResponse<Void> deleteCredential(@PathVariable Long userId,
             @PathVariable Long credentialId) {
         credentialService.deleteCredential(userId, credentialId);
         return ApiResponse.success(null);
     }
 
-    @PutMapping("/{userId}/password")
+    @PutMapping("/password")
     @Operation(summary = "Change user password (shortcut)")
-    public ApiResponse<Void> changePassword(
-            @PathVariable Long userId,
+    public ApiResponse<Void> changePassword(@PathVariable Long userId,
             @Valid @RequestBody ChangePasswordRequest request) {
         credentialService.changePassword(userId, request);
         return ApiResponse.success(null);

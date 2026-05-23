@@ -3,14 +3,17 @@ package iam.platform.gateway.infrastructure.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import iam.platform.gateway.infrastructure.filter.JwtClaimsHeaderFilter;
+import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import reactor.core.publisher.Mono;
 
 /**
  * Configuration for gateway filters.
  *
- * <p>Registers filters that run during request processing to extract JWT claims
- * and add them as standard HTTP headers for downstream services.
+ * <p>
+ * Registers filters that run during request processing to extract JWT claims and add them as
+ * standard HTTP headers for downstream services.
  */
 @Configuration
 public class GatewayFilterConfig {
@@ -26,9 +29,23 @@ public class GatewayFilterConfig {
     }
 
     /**
-     * JwtClaimsHeaderFilter bean - automatically registered as a WebFilter by Spring.
-     * The filter extracts user/tenant information from JWT tokens and adds them
-     * as standard HTTP headers for downstream services.
+     * IP-based KeyResolver for RequestRateLimiter. Uses client IP as the rate-limiting key,
+     * allowing anonymous requests to pass.
+     */
+    @Bean
+    public KeyResolver ipKeyResolver() {
+        return exchange -> {
+            String hostAddress = exchange.getRequest().getRemoteAddress() != null
+                    ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
+                    : "unknown";
+            return Mono.just(hostAddress);
+        };
+    }
+
+    /**
+     * JwtClaimsHeaderFilter bean - automatically registered as a WebFilter by Spring. The filter
+     * extracts user/tenant information from JWT tokens and adds them as standard HTTP headers for
+     * downstream services.
      */
     @Bean
     public JwtClaimsHeaderFilter jwtClaimsHeaderFilter(ObjectMapper objectMapper) {

@@ -1,0 +1,17 @@
+# ============================================
+# Docker Compose UI 配置文件
+# ============================================
+# 前端 UI 独立部署，与后端服务解耦
+# 启动命令: docker-compose -f docker-compose.ui.yml up -d
+# ============================================
+
+services:
+  # IAM Admin UI - Management Console
+  iam-admin-ui:
+    build:
+      context: .
+      dockerfile: iam-admin-ui/Dockerfile
+    container_name: iam-admin-ui
+    ports:
+      - "3000:80"
+    restart: "no"

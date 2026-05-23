@@ -7,11 +7,8 @@
 | 文档 | 说明 |
 |------|------|
 | [文档索引](docs/index.md) | 完整文档导航索引 |
-| [部署指南](DEPLOYMENT.md) | Docker 构建、部署、运维监控 |
-| [Docker操作速查](DOCKER_OPERATIONS.md) | Docker 命令快速参考 |
-| [脚本参考](SCRIPTS_REFERENCE.md) | ci-build.ps1 和 uninstall-env.ps1 详细说明 |
-| [命令速查](QUICK_REFERENCE.md) | 环境管理常用命令速查表 |
-| [Mock 数据管理](src/main/resources/db/dev/README_MOCK_DATA.md) | DEV 环境测试数据重置指南 |
+| [Docker Compose 用法](DOCKER-COMPOSE-USAGE.md) | Docker Compose 多环境部署指南 |
+| [SSL 证书配置](ssl/README.md) | HTTPS 证书生成与配置 |
 
 ## 技术栈
 
@@ -93,18 +90,30 @@
 
 ## 项目结构
 
-本项目采用 **Clean Architecture** + **Domain-Driven Design** 架构：
+本项目采用 **多模块 Maven** + **Clean Architecture** + **Domain-Driven Design** 架构：
 
 ```
-src/main/java/sso/oidc
+iam-platform/
+├── iam-common/                # 公共模块 - 共享 DTO、工具类、枚举
+├── iam-auth-server/           # 认证服务 - OIDC Provider、多协议认证
+├── iam-admin-server/          # 管理服务 - 用户/租户/角色/应用管理
+├── iam-admin-ui/              # 管理前端 - Vue 3 + Vite
+├── iam-bff-server/            # BFF 服务 - 前端聚合层
+├── iam-gateway/               # API 网关 - 路由、鉴权、限流
+├── iam-audit-server/          # 审计服务 - 操作日志记录
+└── docs/                      # 设计文档
+```
+
+各服务内部采用 DDD 分层：
+
+```
+src/main/java/iam/platform/{module}
 ├── application/           # 应用层 - 用例编排、DTO、Assembler
 ├── domain/                # 领域层 - 实体、值对象、领域服务、仓储接口
 ├── infrastructure/        # 基础设施层 - 数据库、安全、配置实现
 ├── interfaces/            # 接口层 - REST API + Web 控制器
-└── SsoOidcApplication.java
+└── {Module}Application.java
 ```
-
-详细架构说明请参阅项目 Wiki。
 
 ## 开发与规范
 
@@ -154,18 +163,21 @@ feature/* → develop → release/* → canary/* → master
 | CANARY | `canary` | `<version>-canary` | 灰度发布验证 |
 | PROD | `prod` | `<version>` | 生产环境 |
 
-详细环境差异、激活方式和配置说明请参阅 [DEPLOYMENT.md](DEPLOYMENT.md#多环境配置)。
+详细环境差异、激活方式和配置说明请参阅 [DOCKER-COMPOSE-USAGE.md](DOCKER-COMPOSE-USAGE.md)。
 
 ## Docker 部署
 
-使用 Docker 进行容器化部署：
+使用 Docker Compose 进行容器化部署：
 
 ```powershell
-# 一键构建并部署
-./ci-build.ps1 -TargetEnvironment dev -Version 1.0.0-SNAPSHOT -Deploy
+# 启动中间件 (PostgreSQL, Redis, Nacos 等)
+docker compose -f docker-compose.middleware.yml up -d
+
+# 启动应用服务
+docker compose -f docker-compose.app.yml up -d
 ```
 
-完整部署指南、环境配置和回滚操作请参阅 [DEPLOYMENT.md](DEPLOYMENT.md)。
+完整部署指南请参阅 [DOCKER-COMPOSE-USAGE.md](DOCKER-COMPOSE-USAGE.md)。
 
 ## 数据库管理
 

@@ -2,9 +2,10 @@
 
 <cite>
 **本文档引用的文件**
-- [DOCKER-COMPOSE-USAGE.md](file://DOCKER-COMPOSE-USAGE.md)
+- [docker-compose.yml](file://docker-compose.yml)
 - [docker-compose.app.yml](file://docker-compose.app.yml)
 - [docker-compose.middleware.yml](file://docker-compose.middleware.yml)
+- [DOCKER-COMPOSE-USAGE.md](file://DOCKER-COMPOSE-USAGE.md)
 - [.dockerignore](file://.dockerignore)
 - [iam-bff-server/Dockerfile](file://iam-bff-server/Dockerfile)
 - [iam-auth-server/Dockerfile](file://iam-auth-server/Dockerfile)
@@ -16,6 +17,14 @@
 - [iam-admin-server/bootstrap.yml](file://iam-admin-server/bootstrap.yml)
 - [iam-gateway/bootstrap.yml](file://iam-gateway/bootstrap.yml)
 </cite>
+
+## 更新摘要
+**所做更改**
+- 更新了配置文件结构说明，反映统一入口文件的引入
+- 修改了架构概览图，展示新的分层结构
+- 更新了使用场景说明，强调统一入口文件的优势
+- 修正了服务依赖关系图，体现新的配置组织方式
+- 更新了故障排除指南，适应新的部署模式
 
 ## 目录
 1. [简介](#简介)
@@ -32,54 +41,57 @@
 
 本指南详细介绍了IAM平台项目的Docker组合使用方法。该项目采用微服务架构，通过Docker Compose将中间件服务和业务服务进行分离部署，提供了完整的开发、测试和生产环境部署方案。
 
+**更新** 项目现已采用统一的Docker Compose入口文件架构，通过`docker-compose.yml`作为单一入口协调中间件和应用服务的部署，同时保持原有独立配置文件的兼容性，为不同使用场景提供灵活的部署选项。
+
 IAM平台包含五个核心服务：网关服务、认证授权服务、管理服务、审计服务和BFF服务，以及一套完整的中间件基础设施，包括服务注册与配置中心、数据库、缓存、监控和消息队列系统。
 
 ## 项目结构
 
-项目采用分层的Docker部署策略，将服务按功能划分为两个主要部分：
+项目采用分层的Docker部署策略，通过统一入口文件协调中间件服务和业务服务的部署：
 
 ```mermaid
 graph TB
-subgraph "Docker组合配置"
-A[docker-compose.middleware.yml] --> B[中间件服务]
-C[docker-compose.app.yml] --> D[业务服务]
+subgraph "统一Docker Compose入口"
+A[docker-compose.yml] --> B[基础中间件层]
+A --> C[业务服务层]
 end
-subgraph "中间件服务"
-E[Nacos服务注册]
-F[PostgreSQL数据库]
-G[Redis缓存]
-H[Prometheus监控]
+subgraph "基础中间件层"
+D[PostgreSQL数据库]
+E[Redis缓存]
+F[Prometheus监控]
+G[RocketMQ消息队列]
+H[Nacos服务注册]
 I[Zipkin追踪]
-J[RocketMQ消息队列]
 end
-subgraph "业务服务"
-K[IAM Gateway]
-L[IAM Auth Server]
-M[IAM Admin Server]
-N[IAM Audit Server]
-O[IAM BFF Server]
+subgraph "业务服务层"
+J[IAM Auth Server]
+K[IAM Admin Server]
+L[IAM Audit Server]
+M[IAM BFF Server]
+N[IAM Gateway]
 end
+B --> D
 B --> E
 B --> F
 B --> G
 B --> H
 B --> I
-B --> J
-D --> K
-D --> L
-D --> M
-D --> N
-D --> O
+C --> J
+C --> K
+C --> L
+C --> M
+C --> N
 ```
 
 **图表来源**
-- [docker-compose.middleware.yml:1-150](file://docker-compose.middleware.yml#L1-L150)
-- [docker-compose.app.yml:1-170](file://docker-compose.app.yml#L1-L170)
+- [docker-compose.yml:9-82](file://docker-compose.yml#L9-L82)
+- [docker-compose.middleware.yml:1-147](file://docker-compose.middleware.yml#L1-L147)
+- [docker-compose.app.yml:1-119](file://docker-compose.app.yml#L1-L119)
 
 **章节来源**
-- [DOCKER-COMPOSE-USAGE.md:1-157](file://DOCKER-COMPOSE-USAGE.md#L1-L157)
-- [docker-compose.middleware.yml:1-150](file://docker-compose.middleware.yml#L1-L150)
-- [docker-compose.app.yml:1-170](file://docker-compose.app.yml#L1-L170)
+- [docker-compose.yml:1-82](file://docker-compose.yml#L1-L82)
+- [docker-compose.middleware.yml:1-147](file://docker-compose.middleware.yml#L1-L147)
+- [docker-compose.app.yml:1-119](file://docker-compose.app.yml#L1-L119)
 
 ## 核心组件
 
@@ -89,12 +101,12 @@ D --> O
 
 | 服务类型 | 服务名称 | 端口映射 | 主要功能 |
 |---------|----------|----------|----------|
-| 服务注册与配置中心 | Nacos | 8848, 9848 | 服务发现、配置管理 |
 | 数据库 | PostgreSQL | 5432 | 关系型数据存储 |
 | 缓存 | Redis | 6379 | 内存缓存、会话存储 |
 | 监控 | Prometheus | 9090 | 指标收集与监控 |
-| 追踪 | Zipkin | 9410, 9411 | 分布式链路追踪 |
 | 消息队列 | RocketMQ | 9876, 10909, 10911, 10912 | 异步消息处理 |
+| 服务注册与配置中心 | Nacos | 8848, 9848 | 服务发现、配置管理 |
+| 追踪 | Zipkin | 9410, 9411 | 分布式链路追踪 |
 
 ### 业务服务组件
 
@@ -102,19 +114,19 @@ D --> O
 
 | 服务名称 | 容器端口 | 主要职责 |
 |----------|----------|----------|
-| IAM Gateway | 9000 | API网关、请求路由 |
 | IAM Auth Server | 9001, 9005 | 认证授权、用户管理 |
 | IAM Admin Server | 9002, 9006 | 管理控制台、权限管理 |
 | IAM Audit Server | 9003, 9004 | 审计日志、合规管理 |
 | IAM BFF Server | 9010 | 前端代理、服务聚合 |
+| IAM Gateway | 9000 | API网关、请求路由 |
 
 **章节来源**
-- [DOCKER-COMPOSE-USAGE.md:7-21](file://DOCKER-COMPOSE-USAGE.md#L7-L21)
-- [DOCKER-COMPOSE-USAGE.md:103-127](file://DOCKER-COMPOSE-USAGE.md#L103-L127)
+- [docker-compose.middleware.yml:6-147](file://docker-compose.middleware.yml#L6-L147)
+- [docker-compose.app.yml:6-119](file://docker-compose.app.yml#L6-L119)
 
 ## 架构概览
 
-系统采用微服务架构，通过Docker容器化部署，实现了服务间的松耦合和高可用性。
+系统采用微服务架构，通过Docker容器化部署，实现了服务间的松耦合和高可用性。新的统一入口文件架构提供了更简洁的部署体验：
 
 ```mermaid
 graph TB
@@ -125,78 +137,97 @@ C[第三方集成]
 end
 subgraph "网关层"
 D[IAM Gateway]
+E[IAM BFF Server]
 end
 subgraph "服务层"
-E[IAM BFF Server]
 F[IAM Auth Server]
 G[IAM Admin Server]
 H[IAM Audit Server]
 end
 subgraph "中间件层"
-I[Nacos]
-J[PostgreSQL]
-K[Redis]
-L[Prometheus]
-M[Zipkin]
-N[RocketMQ]
+I[PostgreSQL]
+J[Redis]
+K[RocketMQ]
+L[Nacos]
+M[Prometheus]
+N[Zipkin]
 end
 A --> D
 B --> D
 C --> D
 D --> E
-D --> F
-D --> G
-D --> H
 E --> F
 E --> G
 E --> H
 F --> I
 F --> J
 F --> K
-F --> N
+F --> L
 G --> I
 G --> J
 G --> K
-G --> N
+G --> L
 H --> I
 H --> J
 H --> K
-H --> N
-I --> L
+H --> L
 I --> M
+J --> M
+K --> M
+L --> M
+N --> M
 ```
 
 **图表来源**
-- [docker-compose.app.yml:3-165](file://docker-compose.app.yml#L3-L165)
-- [docker-compose.middleware.yml:3-146](file://docker-compose.middleware.yml#L3-L146)
+- [docker-compose.yml:58-82](file://docker-compose.yml#L58-L82)
+- [docker-compose.middleware.yml:6-147](file://docker-compose.middleware.yml#L6-L147)
 
 ## 详细组件分析
 
 ### Docker Compose配置分析
 
-#### 中间件服务配置
+#### 统一入口文件配置
 
-中间件服务配置采用了独立的compose文件，确保基础设施服务的稳定性和可维护性：
+新的`docker-compose.yml`文件通过`extends`机制整合了中间件和应用服务配置：
 
 ```mermaid
 flowchart TD
-A[启动中间件服务] --> B[检查Nacos健康状态]
-B --> C{Nacos就绪?}
-C --> |否| D[等待重试]
-D --> B
-C --> |是| E[启动PostgreSQL]
-E --> F[启动Redis]
-F --> G[启动Prometheus]
-G --> H[启动Zipkin]
-H --> I[启动RocketMQ]
-I --> J[服务全部就绪]
+A[启动统一入口] --> B[加载中间件配置]
+B --> C[启动基础中间件]
+C --> D[启动消息队列]
+D --> E[启动服务治理]
+E --> F[加载应用配置]
+F --> G[启动业务服务]
+G --> H[启动聚合层]
+H --> I[服务全部就绪]
 ```
 
 **图表来源**
-- [docker-compose.middleware.yml:24-28](file://docker-compose.middleware.yml#L24-L28)
-- [docker-compose.middleware.yml:45-49](file://docker-compose.middleware.yml#L45-L49)
-- [docker-compose.middleware.yml:64-68](file://docker-compose.middleware.yml#L64-L68)
-- [docker-compose.middleware.yml:93-97](file://docker-compose.middleware.yml#L93-L97)
+- [docker-compose.yml:14-47](file://docker-compose.yml#L14-L47)
+- [docker-compose.yml:58-82](file://docker-compose.yml#L58-L82)
+
+#### 中间件服务配置
+
+中间件服务配置保持了原有的独立特性，确保基础设施的稳定性：
+
+```mermaid
+sequenceDiagram
+participant Middleware as 中间件层
+participant Postgres as PostgreSQL
+participant Redis as Redis
+participant Nacos as Nacos
+Middleware->>Postgres : 启动数据库
+Postgres-->>Middleware : 健康检查通过
+Middleware->>Redis : 启动缓存
+Redis-->>Middleware : 健康检查通过
+Middleware->>Nacos : 启动服务注册
+Nacos-->>Middleware : 健康检查通过
+```
+
+**图表来源**
+- [docker-compose.middleware.yml:20-24](file://docker-compose.middleware.yml#L20-L24)
+- [docker-compose.middleware.yml:37-41](file://docker-compose.middleware.yml#L37-L41)
+- [docker-compose.middleware.yml:124-128](file://docker-compose.middleware.yml#L124-L128)
 
 #### 业务服务配置
 
@@ -220,12 +251,13 @@ Gateway-->>Client : 返回响应
 ```
 
 **图表来源**
-- [docker-compose.app.yml:16-17](file://docker-compose.app.yml#L16-L17)
-- [docker-compose.app.yml:152-155](file://docker-compose.app.yml#L152-L155)
+- [docker-compose.app.yml:82-98](file://docker-compose.app.yml#L82-L98)
+- [docker-compose.app.yml:100-118](file://docker-compose.app.yml#L100-L118)
 
 **章节来源**
-- [docker-compose.middleware.yml:1-150](file://docker-compose.middleware.yml#L1-L150)
-- [docker-compose.app.yml:1-170](file://docker-compose.app.yml#L1-L170)
+- [docker-compose.yml:1-82](file://docker-compose.yml#L1-L82)
+- [docker-compose.middleware.yml:1-147](file://docker-compose.middleware.yml#L1-L147)
+- [docker-compose.app.yml:1-119](file://docker-compose.app.yml#L1-L119)
 
 ### Dockerfile构建配置
 
@@ -317,39 +349,56 @@ D --> J[配置热更新]
 ```mermaid
 graph TB
 subgraph "外部依赖"
-A[Nacos服务]
-B[PostgreSQL数据库]
-C[Redis缓存]
-D[RocketMQ消息队列]
+A[PostgreSQL数据库]
+B[Redis缓存]
+C[RocketMQ消息队列]
+D[Nacos服务注册]
+E[Prometheus监控]
+F[Zipkin追踪]
 end
 subgraph "内部服务"
-E[IAM Gateway]
-F[IAM BFF Server]
 G[IAM Auth Server]
 H[IAM Admin Server]
 I[IAM Audit Server]
+J[IAM BFF Server]
+K[IAM Gateway]
 end
-A --> E
-A --> F
 A --> G
 A --> H
 A --> I
 B --> G
 B --> H
 B --> I
-C --> E
-C --> F
+B --> J
+B --> K
 C --> G
 C --> H
 C --> I
 D --> G
 D --> H
 D --> I
+D --> J
+D --> K
+E --> G
+E --> H
+E --> I
+E --> J
+E --> K
+F --> G
+F --> H
+F --> I
+G --> J
+G --> K
+H --> J
+H --> K
+I --> J
+I --> K
+J --> K
 ```
 
 **图表来源**
-- [docker-compose.app.yml:20-64](file://docker-compose.app.yml#L20-L64)
-- [docker-compose.app.yml:88-138](file://docker-compose.app.yml#L88-L138)
+- [docker-compose.app.yml:6-119](file://docker-compose.app.yml#L6-L119)
+- [docker-compose.middleware.yml:6-147](file://docker-compose.middleware.yml#L6-L147)
 
 ### 网络拓扑
 
@@ -358,38 +407,42 @@ D --> I
 ```mermaid
 graph LR
 subgraph "iam-network桥接网络"
-A[Nacos]
-B[PostgreSQL]
-C[Redis]
-D[RocketMQ NameServer]
-E[IAM Gateway]
-F[IAM BFF Server]
-G[IAM Auth Server]
-H[IAM Admin Server]
-I[IAM Audit Server]
+A[PostgreSQL]
+B[Redis]
+C[RocketMQ NameServer]
+D[Nacos]
+E[IAM Auth Server]
+F[IAM Admin Server]
+G[IAM Audit Server]
+H[IAM BFF Server]
+I[IAM Gateway]
 end
 A -.-> E
 A -.-> F
 A -.-> G
-A -.-> H
-A -.-> I
+B -.-> E
+B -.-> F
 B -.-> G
 B -.-> H
 B -.-> I
 C -.-> E
 C -.-> F
 C -.-> G
-C -.-> H
-C -.-> I
+D -.-> E
+D -.-> F
+D -.-> G
+D -.-> H
+D -.-> I
+H -.-> I
 ```
 
 **图表来源**
-- [docker-compose.middleware.yml:167-170](file://docker-compose.middleware.yml#L167-L170)
-- [docker-compose.app.yml:167-170](file://docker-compose.app.yml#L167-L170)
+- [docker-compose.middleware.yml:144-147](file://docker-compose.middleware.yml#L144-L147)
+- [docker-compose.app.yml:100-119](file://docker-compose.app.yml#L100-L119)
 
 **章节来源**
-- [docker-compose.middleware.yml:147-150](file://docker-compose.middleware.yml#L147-L150)
-- [docker-compose.app.yml:167-170](file://docker-compose.app.yml#L167-L170)
+- [docker-compose.middleware.yml:144-147](file://docker-compose.middleware.yml#L144-L147)
+- [docker-compose.app.yml:100-119](file://docker-compose.app.yml#L100-L119)
 
 ## 性能考虑
 
@@ -397,19 +450,21 @@ C -.-> I
 
 中间件服务采用了合理的资源配置策略：
 
-- **Nacos**: 单机模式配置，适合开发环境使用
 - **PostgreSQL**: 使用专用数据目录，确保数据持久化
 - **Redis**: 配置了密码认证和持久化存储
 - **Prometheus**: 独立的配置文件和数据目录
 - **RocketMQ**: 分离的NameServer和Broker组件
+- **Nacos**: 单机模式配置，适合开发环境使用
 
 ### 启动顺序优化
 
-Compose文件定义了明确的服务启动依赖关系：
+统一入口文件定义了明确的服务启动依赖关系：
 
-1. **中间件服务优先启动**: 确保基础设施就绪
-2. **业务服务按需启动**: 根据依赖关系启动
-3. **健康检查机制**: 确保服务真正可用
+1. **基础中间件优先启动**: PostgreSQL、Redis等核心基础设施
+2. **消息队列服务启动**: RocketMQ集群组件
+3. **服务治理组件启动**: Nacos、Zipkin等治理工具
+4. **业务服务按需启动**: 根据依赖关系启动
+5. **聚合层服务最后启动**: 确保上游服务完全就绪
 
 ## 故障排除指南
 
@@ -417,58 +472,65 @@ Compose文件定义了明确的服务启动依赖关系：
 
 ```mermaid
 flowchart TD
-A[服务启动失败] --> B{检查中间件}
-B --> C{Nacos正常?}
-C --> |否| D[检查Nacos配置]
-C --> |是| E{数据库连接?}
-E --> |失败| F[检查PostgreSQL]
-E --> |成功| G{缓存连接?}
-G --> |失败| H[检查Redis配置]
-G --> |成功| I[检查业务服务]
-D --> J[重新启动Nacos]
-F --> K[检查数据库连接]
-H --> L[检查Redis认证]
-I --> M[查看应用日志]
-J --> N[确认服务依赖]
-K --> N
-L --> N
-M --> N
+A[服务启动失败] --> B{检查统一入口}
+B --> C{中间件就绪?}
+C --> |否| D[检查中间件配置]
+C --> |是| E{应用服务依赖?}
+E --> |失败| F[检查服务间通信]
+E --> |成功| G{构建问题?}
+G --> |失败| H[检查JAR文件构建]
+G --> |成功| I[检查环境变量]
+H --> J[重新构建应用]
+F --> K[检查网络配置]
+I --> L[检查配置文件]
+J --> M[确认服务依赖]
+K --> M
+L --> M
 ```
 
 ### 日志查看方法
 
 ```bash
+# 查看统一入口的所有服务日志
+docker-compose logs -f
+
+# 查看中间件服务日志
+docker-compose -f docker-compose.middleware.yml logs -f
+
+# 查看应用服务日志
+docker-compose -f docker-compose.app.yml logs -f
+
 # 查看特定服务日志
-docker-compose -f docker-compose.app.yml logs -f iam-bff-service
-
-# 查看认证服务日志
-docker-compose -f docker-compose.app.yml logs -f iam-auth-server
-
-# 查看所有服务状态
-docker-compose -f docker-compose.app.yml ps
+docker-compose logs -f iam-gateway
+docker-compose logs -f iam-auth-server
+docker-compose logs -f nacos
 ```
 
 ### 重启策略
 
 ```bash
-# 重启单个服务
-docker-compose -f docker-compose.app.yml restart iam-bff-service
+# 重启统一入口中的特定服务
+docker-compose restart iam-gateway
 
-# 重启所有业务服务
+# 重启所有应用服务
 docker-compose -f docker-compose.app.yml restart
+
+# 重启所有中间件服务
+docker-compose -f docker-compose.middleware.yml restart
 ```
 
 **章节来源**
-- [DOCKER-COMPOSE-USAGE.md:81-101](file://DOCKER-COMPOSE-USAGE.md#L81-L101)
-- [DOCKER-COMPOSE-USAGE.md:151-157](file://DOCKER-COMPOSE-USAGE.md#L151-L157)
+- [DOCKER-COMPOSE-USAGE.md:136-165](file://DOCKER-COMPOSE-USAGE.md#L136-L165)
+- [docker-compose.yml:1-82](file://docker-compose.yml#L1-L82)
 
 ## 结论
 
-本Docker组合配置为IAM平台提供了完整的容器化部署解决方案。通过将中间件服务和业务服务分离，实现了更好的可维护性和扩展性。配置文件展示了现代化微服务架构的最佳实践，包括：
+本Docker组合配置为IAM平台提供了完整的容器化部署解决方案。通过引入统一的`docker-compose.yml`入口文件，项目实现了部署方式的重大简化：
 
-- 明确的服务分层和职责划分
-- 完善的依赖管理和启动顺序
-- 标准化的构建和部署流程
-- 全面的监控和故障排除机制
+- **统一入口文件**: 通过`extends`机制整合中间件和应用配置
+- **灵活部署选项**: 支持一键启动完整环境或独立部署中间件/应用
+- **向后兼容**: 保持原有独立配置文件的兼容性
+- **清晰的分层结构**: 明确的基础设施和服务层划分
+- **简化的依赖管理**: 通过统一入口文件管理复杂的依赖关系
 
-该配置适用于开发、测试和生产环境，为IAM平台的持续集成和部署提供了坚实的基础。
+该配置适用于开发、测试和生产环境，为IAM平台的持续集成和部署提供了更加灵活和高效的解决方案。统一入口文件架构不仅简化了部署流程，还保持了系统的可维护性和扩展性，为未来的架构演进奠定了良好的基础。

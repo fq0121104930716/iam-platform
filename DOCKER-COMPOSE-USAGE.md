@@ -43,8 +43,8 @@
 # 构建业务服务
 mvn clean package -DskipTests
 
-# 启动所有服务（默认使用 docker-compose.yml）
-docker-compose up -d
+# 启动所有服务（默认使用 docker-compose.yml，--build 强制重新构建镜像）
+docker-compose up -d --build
 ```
 
 ### 场景 2: 仅启动中间件（本地开发调试）
@@ -67,8 +67,8 @@ docker-compose -f docker-compose.middleware.yml up -d postgres redis nacos
 # 确保中间件已启动
 docker-compose -f docker-compose.middleware.yml ps
 
-# 启动应用服务
-docker-compose -f docker-compose.app.yml up -d
+# 启动应用服务（--build 强制重新构建镜像）
+docker-compose -f docker-compose.app.yml up -d --build
 ```
 
 ### 1. 构建业务服务
@@ -83,15 +83,15 @@ mvn clean package -DskipTests
 ### 2. 启动所有服务
 
 ```bash
-# 方式1: 使用主入口文件（推荐）
-docker-compose up -d
+# 方式1: 使用主入口文件（推荐，--build 强制重新构建镜像）
+docker-compose up -d --build
 
 # 方式2: 分别启动
 # 先启动中间件
 docker-compose -f docker-compose.middleware.yml up -d
 
-# 等待中间件就绪后，启动应用
-docker-compose -f docker-compose.app.yml up -d
+# 等待中间件就绪后，启动应用（--build 强制重新构建镜像）
+docker-compose -f docker-compose.app.yml up -d --build
 ```
 
 服务将按照依赖顺序自动启动：
@@ -236,7 +236,8 @@ docker-compose -f docker-compose.middleware.yml restart
 
 1. **启动顺序**: 必须先启动中间件,再启动应用服务
 2. **构建要求**: 启动应用服务前,请确保已执行 `mvn clean package` 构建 JAR 文件
-3. **HTTPS 配置**: 如需 HTTPS,请配置 SSL 证书(参考 ssl/README.md)
-4. **数据持久化**: 中间件数据持久化路径可根据实际情况修改
-5. **依赖管理**: `docker-compose.app.yml` 中的应用服务依赖中间件,但不会自动启动中间件
-6. **开发调试**: 推荐在 IDE 中直接运行应用代码,仅用 Docker 管理中间件
+3. **镜像更新**: 应用服务已配置 `pull_policy: build`,每次 `up` 时自动重新构建镜像,无需手动清理旧镜像
+4. **HTTPS 配置**: 如需 HTTPS,请配置 SSL 证书(参考 ssl/README.md)
+5. **数据持久化**: 中间件数据持久化路径可根据实际情况修改
+6. **依赖管理**: `docker-compose.app.yml` 中的应用服务依赖中间件,但不会自动启动中间件
+7. **开发调试**: 推荐在 IDE 中直接运行应用代码,仅用 Docker 管理中间件

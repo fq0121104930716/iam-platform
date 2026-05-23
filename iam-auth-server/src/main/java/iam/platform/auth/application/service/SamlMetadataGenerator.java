@@ -1,6 +1,5 @@
 package iam.platform.auth.application.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.shibboleth.utilities.java.support.xml.SerializeSupport;
 import org.opensaml.core.xml.XMLObjectBuilder;
@@ -9,6 +8,8 @@ import org.opensaml.core.xml.config.XMLObjectProviderRegistrySupport;
 import org.opensaml.saml.common.SAMLObjectBuilder;
 import org.opensaml.saml.saml2.metadata.*;
 import org.opensaml.security.x509.BasicX509Credential;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 import iam.platform.auth.infrastructure.config.SamlProperties;
 import org.w3c.dom.Element;
@@ -25,12 +26,17 @@ import java.util.Base64;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
+@DependsOn("openSamlConfig")
 public class SamlMetadataGenerator {
 
         private final SamlProperties samlProperties;
-        private final XMLObjectBuilderFactory builderFactory =
-                        XMLObjectProviderRegistrySupport.getBuilderFactory();
+        private final XMLObjectBuilderFactory builderFactory;
+
+        @Autowired
+        public SamlMetadataGenerator(SamlProperties samlProperties) {
+                this.samlProperties = samlProperties;
+                this.builderFactory = XMLObjectProviderRegistrySupport.getBuilderFactory();
+        }
 
         @SuppressWarnings("unchecked")
         private <T extends org.opensaml.saml.common.SAMLObject> SAMLObjectBuilder<T> getBuilder(

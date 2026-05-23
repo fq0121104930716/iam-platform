@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 9000
   ssl:
     enabled: ${SSL_ENABLED:false}
     key-store: ${SSL_KEY_STORE:file:${user.dir}/ssl/keystore.p12}
@@ -23,7 +23,15 @@ spring:
             scope: openid,profile,email
         provider:
           gateway-sso:
-            issuer-uri: ${AUTH_ISSUER_URI:http://host.docker.internal:9001}
+            # 显式声明端点，避免启动时通过 issuer-uri 拉取 OIDC Discovery（消除对 auth 服务的启动依赖）
+            authorization-uri: ${AUTH_SERVER_URL:http://localhost:9001}/oauth2/authorize
+            token-uri: ${AUTH_SERVER_URL:http://localhost:9001}/oauth2/token
+            user-info-uri: ${AUTH_SERVER_URL:http://localhost:9001}/userinfo
+            jwk-set-uri: ${AUTH_SERVER_URL:http://localhost:9001}/oauth2/jwks
+      # Resource Server 配置 - jwk-set-uri 懒加载，首次验证 JWT 时才拉取 JWKS
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${AUTH_SERVER_URL:http://localhost:9001}/oauth2/jwks
 
   data:
     redis:
@@ -31,13 +39,9 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:iam59!z$}
 
-# OAuth2 Resource Server配置
-# 使用 jwk-set-uri 替代 issuer-uri，避免启动时强依赖 auth 服务（懒加载，首次验证 JWT 时才拉取 JWKS）
-  security.oauth2.resourceserver.jwt.jwk-set-uri: ${AUTH_JWK_SET_URI:http://host.docker.internal:9001/oauth2/jwks}
-
 management:
   server:
-    port: 8081
+    port: 9080
   endpoints:
     web:
       exposure:

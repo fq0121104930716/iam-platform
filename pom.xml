@@ -37,7 +37,7 @@
         <spring-cloud.version>2023.0.1</spring-cloud.version>
         <spring-cloud-alibaba.version>2023.0.1.0</spring-cloud-alibaba.version>
         <opensaml.version>4.3.2</opensaml.version>
-        <rocketmq-spring.version>2.3.1</rocketmq-spring.version>
+        <rocketmq-spring.version>2.2.3</rocketmq-spring.version>
         <!-- Docker image version, can be overridden via -Ddocker.image.version=1.2.3 -->
         <docker.image.version>${project.version}</docker.image.version>
     </properties>
@@ -104,6 +104,23 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- BouncyCastle (align to Spring Cloud's spring-security-rsa expected version) -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.77</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>1.77</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>1.77</version>
+            </dependency>
+
             <!-- OpenSAML for SAML 2.0 support -->
             <dependency>
                 <groupId>org.opensaml</groupId>
@@ -126,6 +143,12 @@
                 <groupId>org.apache.rocketmq</groupId>
                 <artifactId>rocketmq-spring-boot-starter</artifactId>
                 <version>${rocketmq-spring.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>

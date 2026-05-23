@@ -23,9 +23,9 @@ services:
       - ROCKETMQ_NAMESRV=host.docker.internal:9876
       - ENCRYPTION_KEY=changeme-changeme-changeme-changeme!!
     ports:
-      - "9001:9001"
-      - "9005:9005"
-    restart: unless-stopped
+      - "9001:9001" # 主服务端口 (Auth OIDC)
+      - "9005:9005" # 管理端口 (Actuator)
+    restart: "no"
 
   # IAM Admin Server - User & Permission Management
   iam-admin-server:
@@ -47,9 +47,9 @@ services:
       - ROCKETMQ_NAMESRV=host.docker.internal:9876
       - ENCRYPTION_KEY=changeme-changeme-changeme-changeme!!
     ports:
-      - "9002:9002"
-      - "9006:9006"
-    restart: unless-stopped
+      - "9002:9002" # 主服务端口
+      - "9006:9006" # 管理端口 (Actuator)
+    restart: "no"
 
   # IAM Audit Server - Centralized Audit Log Management
   iam-audit-server:
@@ -73,7 +73,7 @@ services:
     ports:
       - "9003:9003"
       - "9004:9004"
-    restart: unless-stopped
+    restart: "no"
 
   # ============================================
   # 聚合层
@@ -94,8 +94,9 @@ services:
       - AUTH_SERVER_URL=http://host.docker.internal:9001
       - ADMIN_SERVER_URL=http://host.docker.internal:9002
     ports:
-      - "9010:9010"
-    restart: unless-stopped
+      - "9010:9010" # 主服务端口
+      - "9011:9011" # 管理端口 (Actuator)
+    restart: "no"
 
   # IAM Gateway - API Gateway
   iam-gateway:
@@ -114,5 +115,6 @@ services:
       - BFF_SERVER_URL=http://host.docker.internal:9010
       - AUDIT_SERVER_URL=http://host.docker.internal:9003
     ports:
-      - "9000:9000"
-    restart: unless-stopped
+      - "9000:9000" # 主服务端口 (Netty)
+      - "9080:9080" # 管理端口 (Actuator)
+    restart: "no"

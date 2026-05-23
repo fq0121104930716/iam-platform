@@ -46,7 +46,7 @@ const routes = [
       {
         path: 'roles',
         name: 'Roles',
-        component: () => import('@/views/RoleManagement.vue'),
+        component: () => import('@/views/RoleList.vue'),
         meta: { title: '角色管理' }
       }
     ]
