@@ -31,4 +31,7 @@ public class AuditLogContext {
     private AuditResult result;
     private String errorMessage;
     private String traceId;
+    private String spanId;
+    private String parentSpanId;
+    private String encryptedFields;
 }

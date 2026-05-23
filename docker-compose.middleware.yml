@@ -1,31 +1,7 @@
-version: '3.8'
-
 services:
-  # Nacos - Service Registry & Config Center
-  nacos:
-    image: nacos/nacos-server:v2.3.2
-    container_name: nacos
-    environment:
-      - MODE=standalone
-      - PREFER_HOST_MODE=ip
-      - NACOS_USER=nacos
-      - JVM_XMS=1g
-      - JVM_XMX=1g
-      - JVM_XMN=512m
-      - JVM_MS=128m
-      - JVM_MMS=320m
-      - TIME_ZONE=Asia/Shanghai
-    ports:
-      - "8848:8848"
-      - "9848:9848"
-    networks:
-      - iam-network
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8848/nacos/v1/cs/ops/website" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # ============================================
+  # 基础中间件层
+  # ============================================
 
   # PostgreSQL - Database
   postgres:
@@ -34,13 +10,12 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=STPass123!
+      - POSTGRES_DB=iam_platform
       - PGDATA=/var/lib/postgresql/18/data
     ports:
       - "5432:5432"
     volumes:
-      - F:\linux\docker\postgres\data:/var/lib/postgresql/data
-    networks:
-      - iam-network
+      - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
@@ -58,8 +33,6 @@ services:
     volumes:
       - F:\linux\docker\redis\redis.conf:/etc/redis/redis.conf
       - F:\linux\docker\redis\data:/data
-    networks:
-      - iam-network
     restart: unless-stopped
     healthcheck:
       test: [ "CMD", "redis-cli", "-a", "iam59!z$", "ping" ]
@@ -67,7 +40,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Prometheus - Metrics Monitoring
+  # Prometheus - Metrics Monitoring (可选)
   prometheus:
     image: ubuntu/prometheus:3.11-24.04_stable
     container_name: prometheus
@@ -76,25 +49,11 @@ services:
     volumes:
       - F:\linux\docker\prometheus\prometheus.yml:/etc/prometheus/prometheus.yml
       - F:\linux\docker\prometheus\data:/prometheus
-    networks:
-      - iam-network
     restart: unless-stopped
 
-  # Zipkin - Distributed Tracing
-  zipkin:
-    image: openzipkin/zipkin:3
-    container_name: zipkin
-    ports:
-      - "9410:9410"
-      - "9411:9411"
-    networks:
-      - iam-network
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9411/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # ============================================
+  # 消息队列层
+  # ============================================
 
   # RocketMQ NameServer
   rocketmq-namesrv:
@@ -107,8 +66,6 @@ services:
       - JAVA_OPT_EXT=-Xms256m -Xmx256m -Xmn128m
     volumes:
       - F:\linux\docker\rocketmq\namesrv-logs:/home/rocketmq/logs
-    networks:
-      - iam-network
     restart: unless-stopped
 
   # RocketMQ Broker
@@ -128,8 +85,6 @@ services:
       - F:\linux\docker\rocketmq\broker-store:/home/rocketmq/store
     depends_on:
       - rocketmq-namesrv
-    networks:
-      - iam-network
     restart: unless-stopped
 
   # RocketMQ Dashboard (可选管理界面)
@@ -139,11 +94,53 @@ services:
     ports:
       - "8088:8080"
     environment:
-      - JAVA_OPTS=-Drocketmq.namesrv.addr=rocketmq-namesrv:9876 -Dcom.rocketmq.sendMessageWithVIP=false
-    networks:
-      - iam-network
+      - JAVA_OPTS=-Drocketmq.namesrv.addr=host.docker.internal:9876 -Dcom.rocketmq.sendMessageWithVIP=false
+    depends_on:
+      - rocketmq-namesrv
     restart: unless-stopped
 
-networks:
-  iam-network:
-    driver: bridge
+  # ============================================
+  # 服务治理层
+  # ============================================
+
+  # Nacos - Service Registry & Config Center
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: nacos
+    environment:
+      - MODE=standalone
+      - PREFER_HOST_MODE=ip
+      - NACOS_USER=nacos
+      - JVM_XMS=1g
+      - JVM_XMX=1g
+      - JVM_XMN=512m
+      - JVM_MS=128m
+      - JVM_MMS=320m
+      - TIME_ZONE=Asia/Shanghai
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://host.docker.internal:8848/nacos/v1/console/server/state" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Zipkin - Distributed Tracing (可选)
+  zipkin:
+    image: openzipkin/zipkin:3
+    container_name: zipkin
+    ports:
+      - "9410:9410"
+      - "9411:9411"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://host.docker.internal:9411/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres-data:
+    driver: local

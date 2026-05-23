@@ -22,7 +22,6 @@
 | Spring Authorization Server | 1.2.5 | OIDC Provider |
 | PostgreSQL | 14+ | 主数据库 |
 | Redis | 7+ | 缓存 + 分布式 Session |
-| Flyway | - | 数据库迁移 |
 | Maven | 3.8+ | 构建工具 |
 | Docker | - | 容器化部署 |
 | Lombok | - | 减少样板代码 |
@@ -168,17 +167,15 @@ feature/* → develop → release/* → canary/* → master
 
 完整部署指南、环境配置和回滚操作请参阅 [DEPLOYMENT.md](DEPLOYMENT.md)。
 
-## 数据库迁移
+## 数据库管理
 
-使用 Flyway 管理数据库版本：
+数据库表结构由 Hibernate 自动管理（ddl-auto: validate），初始数据通过 SQL 脚本手动导入：
 
 | 脚本 | 说明 |
 |------|------|
-| V1__init_schema.sql | 初始化 schema（用户、角色、OAuth2 客户端等表） |
-| V2__seed_default_roles.sql | 初始化默认角色（ROLE_USER, ROLE_ADMIN） |
-| mock_data.sql | DEV 环境测试数据 |
+| V1__complete_schema_initialization.sql | 完整表结构初始化与种子数据 |
 
-详细迁移指南请参阅 [Mock 数据管理](src/main/resources/db/dev/README_MOCK_DATA.md)。
+> 注意：项目已从 Flyway 迁移至 Hibernate DDL 验证模式，确保数据库 schema 与 JPA 实体一致。
 
 ## 集成指南
 

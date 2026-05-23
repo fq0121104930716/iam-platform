@@ -1,47 +1,65 @@
 package iam.platform.auth.application.service;
 
+import iam.platform.auth.application.service.event.AuthenticationCompletedEvent;
+import iam.platform.auth.domain.model.entity.Tenant;
+import iam.platform.auth.domain.model.entity.TenantAccount;
+import iam.platform.auth.domain.model.entity.User;
+import iam.platform.auth.domain.model.enums.AuthenticationMethod;
+import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
+import iam.platform.auth.domain.model.valueobject.TenantAwareAuthenticationToken;
+import iam.platform.auth.domain.repository.TenantAccountRepository;
+import iam.platform.auth.domain.repository.TenantRepository;
+import iam.platform.auth.domain.repository.UserRepository;
+import iam.platform.common.context.TenantContext;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
-import iam.platform.auth.application.service.pipeline.PostAuthenticationPipeline;
-import iam.platform.auth.domain.model.entity.User;
-import iam.platform.auth.domain.model.entity.Tenant;
-import iam.platform.auth.domain.model.entity.TenantAccount;
-import iam.platform.auth.domain.model.enums.AuthenticationMethod;
-import iam.platform.auth.domain.model.valueobject.AuthenticationResult;
-import iam.platform.auth.domain.repository.UserRepository;
-import iam.platform.auth.domain.repository.TenantAccountRepository;
-import iam.platform.auth.domain.repository.TenantRepository;
-import iam.platform.auth.domain.model.valueobject.TenantAwareAuthenticationToken;
-import iam.platform.common.context.TenantContext;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Unified application service for authentication completion and tenant management. Replaces
- * VerificationCodeApplicationService and SsoSessionService authentication logic.
+ * Unified application service for authentication completion and tenant management.
+ * 
+ * REFACTORED: Changed from synchronous PostAuthenticationPipeline to event-driven architecture to
+ * eliminate circular dependencies. Post-authentication logic is now handled by
+ * 
+ * @EventListener components that react to AuthenticationCompletedEvent.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthenticationApplicationService {
 
-        private final PostAuthenticationPipeline pipeline;
+        private final ApplicationEventPublisher eventPublisher;
         private final TenantAccountRepository tenantAccountRepository;
         private final TenantRepository tenantRepository;
         private final UserRepository userRepository;
         private final TenantAccountRoleApplicationService tenantAccountRoleService;
 
         /**
-         * Complete authentication by running the post-authentication pipeline. Called by
+         * Complete authentication by publishing AuthenticationCompletedEvent. Event listeners will
+         * handle post-authentication logic asynchronously. Called by
          * UnifiedAuthenticationSuccessHandler for both first-party and OAuth2 auth.
          */
         public AuthenticationResult completeAuthentication(User user, AuthenticationMethod method,
                         HttpServletRequest request) {
-                return pipeline.execute(user, method, request);
+                log.debug("Completing authentication for user: {} via {}", user.getUsername(),
+                                method);
+
+                // Publish event to trigger post-authentication handlers (synchronous by default)
+                AuthenticationCompletedEvent event =
+                                AuthenticationCompletedEvent.of(this, user, method, request);
+                eventPublisher.publishEvent(event);
+
+                // After synchronous event publishing completes, read result from holder
+                AuthenticationResult resolved = event.getResultHolder().getResult();
+                return resolved != null ? resolved : AuthenticationResult.basic(user, method);
         }
 
         /**

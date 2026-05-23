@@ -26,28 +26,16 @@ public class UserPO {
     private Long id;
 
     @Setter
-    @Column(name = "user_code", nullable = false, unique = true, length = 50)
-    private String userCode;
-
-    @Setter
     @Column(nullable = false, unique = true, length = 100)
     private String username;
 
     @Setter
-    @Column(length = 255)
+    @Column(nullable = false, unique = true, length = 255)
     private String email;
 
     @Setter
-    @Column(length = 20)
-    private String phone;
-
-    @Setter
-    @Column(name = "email_verified", nullable = false)
-    private boolean emailVerified = false;
-
-    @Setter
-    @Column(name = "phone_verified", nullable = false)
-    private boolean phoneVerified = false;
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
 
     @Setter
     @Column(length = 100)
@@ -58,12 +46,36 @@ public class UserPO {
     private String avatarUrl;
 
     @Setter
+    @Column(length = 20)
+    private String phone;
+
+    @Setter
+    @Column(length = 50)
+    private String provider;
+
+    @Setter
+    @Column(name = "provider_user_id", length = 255)
+    private String providerUserId;
+
+    @Setter
+    @Column(name = "phone_verified", nullable = false)
+    private boolean phoneVerified = false;
+
+    @Setter
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
+    @Setter
     @Column(nullable = false)
     private boolean enabled = true;
 
     @Setter
     @Column(name = "account_locked", nullable = false)
     private boolean accountLocked = false;
+
+    @Setter
+    @Column(name = "user_code", nullable = false, unique = true, length = 50)
+    private String userCode;
 
     @Setter
     @Column(name = "last_login_at")

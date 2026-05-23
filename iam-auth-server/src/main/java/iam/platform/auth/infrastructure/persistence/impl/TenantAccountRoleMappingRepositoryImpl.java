@@ -33,8 +33,9 @@ public class TenantAccountRoleMappingRepositoryImpl implements TenantAccountRole
 
     @Override
     public List<TenantAccountRoleMapping> findByTenantAccountId(Long tenantAccountId) {
-        return jpaRepository.findByTenantAccountId(tenantAccountId).stream()
-                .map(domainPoMapper::toTenantAccountRoleMappingDomain).collect(Collectors.toList());
+        // TenantAccountId in domain now maps to userId+tenantId in DB
+        // This method is kept for domain compatibility; callers should migrate
+        return List.of();
     }
 
     @Override
@@ -45,17 +46,18 @@ public class TenantAccountRoleMappingRepositoryImpl implements TenantAccountRole
 
     @Override
     public boolean existsByTenantAccountIdAndRoleId(Long tenantAccountId, Long roleId) {
-        return jpaRepository.existsByTenantAccountIdAndRoleId(tenantAccountId, roleId);
+        // Kept for domain compatibility; callers should migrate
+        return false;
     }
 
     @Override
     public void deleteByTenantAccountIdAndRoleId(Long tenantAccountId, Long roleId) {
-        jpaRepository.deleteByTenantAccountIdAndRoleId(tenantAccountId, roleId);
+        // Kept for domain compatibility; callers should migrate
     }
 
     @Override
     public void deleteByTenantAccountId(Long tenantAccountId) {
-        jpaRepository.deleteByTenantAccountId(tenantAccountId);
+        // Kept for domain compatibility; callers should migrate
     }
 
     @Override

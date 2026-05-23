@@ -29,5 +29,8 @@ public class AuditLogResponse {
     private String result;
     private String errorMessage;
     private String traceId;
+    private String spanId;
+    private String parentSpanId;
+    private String encryptedFields;
     private LocalDateTime createdAt;
 }

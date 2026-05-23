@@ -10,6 +10,8 @@ import java.util.Set;
 
 /**
  * Immutable value object representing the outcome of the authentication pipeline.
+ * 
+ * REFACTORED: Added basic() factory method for event-driven authentication completion.
  */
 public record AuthenticationResult(User user, AuthenticationMethod method,
         TenantAccount selectedTenantAccount, List<TenantAccount> availableTenantAccounts,
@@ -23,6 +25,15 @@ public record AuthenticationResult(User user, AuthenticationMethod method,
             throw new IllegalArgumentException("Available tenant accounts list is required");
         if (authenticatedAt == null)
             authenticatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * Create a basic authentication result (used in event-driven mode).
+     * Post-authentication details will be populated by event listeners.
+     */
+    public static AuthenticationResult basic(User user, AuthenticationMethod method) {
+        return new AuthenticationResult(user, method, null, List.of(), Set.of(), false,
+                LocalDateTime.now());
     }
 
     /**

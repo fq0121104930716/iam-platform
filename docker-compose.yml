@@ -1,0 +1,81 @@
+# ============================================
+# Docker Compose 入口配置文件
+# ============================================
+# 此文件用于同时启动中间件和应用服务
+# 如果只需要启动中间件,请使用: docker-compose -f docker-compose.middleware.yml up -d
+# 如果只需要启动应用,请使用: docker-compose -f docker-compose.app.yml up -d
+# ============================================
+
+services:
+  # ============================================
+  # 基础中间件层（从 docker-compose.middleware.yml 引入）
+  # ============================================
+
+  postgres:
+    extends:
+      file: docker-compose.middleware.yml
+      service: postgres
+
+  redis:
+    extends:
+      file: docker-compose.middleware.yml
+      service: redis
+
+  prometheus:
+    extends:
+      file: docker-compose.middleware.yml
+      service: prometheus
+
+  rocketmq-namesrv:
+    extends:
+      file: docker-compose.middleware.yml
+      service: rocketmq-namesrv
+
+  rocketmq-broker:
+    extends:
+      file: docker-compose.middleware.yml
+      service: rocketmq-broker
+
+  rocketmq-dashboard:
+    extends:
+      file: docker-compose.middleware.yml
+      service: rocketmq-dashboard
+
+  nacos:
+    extends:
+      file: docker-compose.middleware.yml
+      service: nacos
+
+  zipkin:
+    extends:
+      file: docker-compose.middleware.yml
+      service: zipkin
+
+  # ============================================
+  # 业务服务层（从 docker-compose.app.yml 引入）
+  # ============================================
+
+  iam-auth-server:
+    extends:
+      file: docker-compose.app.yml
+      service: iam-auth-server
+
+  iam-admin-server:
+    extends:
+      file: docker-compose.app.yml
+      service: iam-admin-server
+
+  iam-audit-server:
+    extends:
+      file: docker-compose.app.yml
+      service: iam-audit-server
+
+  iam-bff-service:
+    extends:
+      file: docker-compose.app.yml
+      service: iam-bff-service
+
+  iam-gateway:
+    extends:
+      file: docker-compose.app.yml
+      service: iam-gateway

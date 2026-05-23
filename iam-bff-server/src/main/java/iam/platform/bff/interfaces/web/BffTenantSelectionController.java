@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Controller for tenant selection page in BFF.
- * Displays available tenants for the user to choose from.
+ * Controller for tenant selection page in BFF. Displays available tenants for the user to choose
+ * from.
  */
 @Controller
 @RequestMapping("/bff")
@@ -23,12 +23,14 @@ public class BffTenantSelectionController {
     private final AdminDashboardAggregationService aggregationService;
 
     @GetMapping("/select-tenant")
-    public String selectTenant(
-            @RequestParam String userId,
-            Model model) {
+    public String selectTenant(@RequestParam String userId, Model model) {
         // Fetch user's available tenants
         Map<String, Object> dashboardData = aggregationService.getDashboardData(userId, null);
-        List<Map<String, Object>> tenants = (List<Map<String, Object>>) dashboardData.get("tenants");
+        Object tenantsObj = dashboardData.get("tenants");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> tenants =
+                tenantsObj instanceof List ? (List<Map<String, Object>>) tenantsObj : null;
 
         model.addAttribute("userId", userId);
         model.addAttribute("tenants", tenants != null ? tenants : List.of());

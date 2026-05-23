@@ -44,6 +44,7 @@ public class RegisteredClientRepositoryAdapter implements RegisteredClientReposi
                 .orElse(null);
     }
 
+    @SuppressWarnings("deprecation")
     private RegisteredClient toRegisteredClient(Application app) {
         RegisteredClient.Builder builder = RegisteredClient.withId(app.getId().toString())
                 .clientId(app.getAppId()).clientName(app.getAppName());

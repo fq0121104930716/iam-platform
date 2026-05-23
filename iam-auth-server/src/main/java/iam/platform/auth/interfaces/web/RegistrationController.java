@@ -39,6 +39,7 @@ public class RegistrationController {
         }
 
         // Validate password is provided for registration
+        // TODO: Refactor to collect password separately from user creation
         if (request.getPassword() == null || request.getPassword().isBlank()) {
             model.addAttribute("error", "Password is required for registration");
             return "register";

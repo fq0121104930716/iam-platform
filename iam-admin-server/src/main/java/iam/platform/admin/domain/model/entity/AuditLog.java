@@ -39,6 +39,9 @@ public class AuditLog {
     private AuditResult result;
     private String errorMessage;
     private String traceId;
+    private String spanId;
+    private String parentSpanId;
+    private String encryptedFields;
     private LocalDateTime createdAt;
 
     // ==================== Factory Methods ====================
@@ -63,6 +66,8 @@ public class AuditLog {
                 .userAgent(context.getUserAgent()).requestUri(context.getRequestUri())
                 .requestParams(context.getRequestParams()).result(context.getResult())
                 .errorMessage(context.getErrorMessage()).traceId(context.getTraceId())
+                .spanId(context.getSpanId()).parentSpanId(context.getParentSpanId())
+                .encryptedFields(context.getEncryptedFields())
                 .createdAt(now).build();
     }
 

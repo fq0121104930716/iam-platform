@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "t_audit_log", indexes = {
                 @Index(name = "idx_audit_tenant_id", columnList = "tenant_id"),
-                @Index(name = "idx_audit_person_id", columnList = "person_id"),
+                @Index(name = "idx_audit_user_id", columnList = "user_id"),
                 @Index(name = "idx_audit_event_type", columnList = "event_type"),
                 @Index(name = "idx_audit_event_category", columnList = "event_category"),
                 @Index(name = "idx_audit_resource", columnList = "resource_type, resource_id"),
@@ -25,9 +25,9 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_audit_created_at", columnList = "created_at"),
                 @Index(name = "idx_audit_tenant_category_time",
                                 columnList = "tenant_id, event_category, created_at"),
+                @Index(name = "idx_audit_trace_id", columnList = "trace_id"),
                 @Index(name = "idx_audit_event_id", columnList = "event_id"),
-                @Index(name = "idx_audit_source_service", columnList = "source_service"),
-                @Index(name = "idx_audit_trace_id", columnList = "trace_id")})
+                @Index(name = "idx_audit_source_service", columnList = "source_service")})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -37,16 +37,16 @@ public class AuditLogPO {
         @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
 
-        @Column(name = "event_id", length = 36)
+        @Column(name = "event_id", nullable = false, unique = true, length = 36)
         private String eventId;
 
-        @Column(name = "source_service", length = 50)
+        @Column(name = "source_service", nullable = false, length = 50)
         private String sourceService;
 
         @Column(name = "tenant_id")
         private Long tenantId;
 
-        @Column(name = "person_id")
+        @Column(name = "user_id")
         private Long userId;
 
         @Column(name = "username", length = 100)
@@ -88,8 +88,17 @@ public class AuditLogPO {
         @Column(name = "error_message", length = 2000)
         private String errorMessage;
 
-        @Column(name = "trace_id", length = 64)
+        @Column(name = "trace_id", length = 100)
         private String traceId;
+
+        @Column(name = "span_id", length = 100)
+        private String spanId;
+
+        @Column(name = "parent_span_id", length = 100)
+        private String parentSpanId;
+
+        @Column(name = "encrypted_fields", length = 200)
+        private String encryptedFields;
 
         @CreationTimestamp
         @Column(name = "created_at", nullable = false, updatable = false)

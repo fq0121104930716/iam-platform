@@ -1,9 +1,15 @@
+# ============================================================
+# IAM BFF Server - Development Environment Configuration
+# ============================================================
+
+# Logging dev settings
 logging:
   level:
     root: INFO
     iam.platform.bff: DEBUG
     org.springframework.cloud.openfeign: DEBUG
 
+# Thymeleaf dev settings
 spring:
   thymeleaf:
     cache: false

@@ -22,14 +22,6 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
 
-# Feign client configuration
-spring.cloud.openfeign:
-  client:
-    config:
-      default:
-        connectTimeout: 1000
-        readTimeout: 3000
-
 management:
   server:
     port: 9011

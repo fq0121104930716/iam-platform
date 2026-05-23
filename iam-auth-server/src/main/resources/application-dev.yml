@@ -1,19 +1,20 @@
-﻿spring:
+﻿# ============================================================
+# IAM Auth Server - Development Environment Configuration
+# ============================================================
+
+# JPA/Hibernate dev settings
+spring:
   jpa:
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+
+# Thymeleaf dev settings
   thymeleaf:
     cache: false
-  security:
-    oauth2:
-      client:
-        registration:
-          dingtalk:
-            client-id: ${DINGTALK_CLIENT_ID:dev-dingtalk-client-id}
-            client-secret: ${DINGTALK_CLIENT_SECRET:dev-dingtalk-client-secret}
 
+# Verification code dev settings
 verification-code:
   sms:
     enabled: false
@@ -21,13 +22,20 @@ verification-code:
     enabled: true
     from: dev@iam-platform.com
 
+# Security dev settings
 security:
   encryption:
     key: ${ENCRYPTION_KEY:oLEwJBQg7EXXZijxJtoXYet4qcxODrqs}
 
+# Logging dev settings
 logging:
   level:
     root: INFO
     iam.platform.auth: DEBUG
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
+
+# RocketMQ dev settings (set to false if RocketMQ is not running locally)
+audit:
+  rocketmq:
+    enabled: ${AUDIT_ROCKETMQ_ENABLED:true}

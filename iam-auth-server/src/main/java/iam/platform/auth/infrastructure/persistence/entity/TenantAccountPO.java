@@ -15,7 +15,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "t_tenant_account")
+@Table(name = "t_user_tenant_mapping")
 @Getter
 @NoArgsConstructor
 public class TenantAccountPO {
@@ -26,7 +26,7 @@ public class TenantAccountPO {
     private Long id;
 
     @Setter
-    @Column(name = "person_id", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @Setter
@@ -34,7 +34,7 @@ public class TenantAccountPO {
     private Long tenantId;
 
     @Setter
-    @Column(name = "account_code", nullable = false, length = 50)
+    @Column(name = "account_code", length = 50)
     private String accountCode;
 
     @Setter
@@ -46,20 +46,20 @@ public class TenantAccountPO {
     private String status = "ACTIVE";
 
     @Setter
-    @Column(name = "joined_at", nullable = false)
-    private LocalDateTime joinedAt;
-
-    @Setter
-    @Column(name = "left_at")
-    private LocalDateTime leftAt;
-
-    @Setter
     @Column(name = "preferred_language", length = 10)
     private String preferredLanguage = "zh-CN";
 
     @Setter
     @Column(length = 50)
     private String timezone = "Asia/Shanghai";
+
+    @Setter
+    @Column(name = "joined_at", nullable = false)
+    private LocalDateTime joinedAt;
+
+    @Setter
+    @Column(name = "left_at")
+    private LocalDateTime leftAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

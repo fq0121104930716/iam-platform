@@ -1,10 +1,9 @@
 -- ============================================================
--- V1: Complete SSO OIDC Schema Initialization
--- Merged from V1-V7: Complete schema with all features
--- Tables: t_role, t_user, t_user_role, t_person, t_tenant, 
---         t_tenant_account, t_organization, t_application,
---         t_audit_log, oauth2_authorization, oauth2_authorization_consent
--- Plus: Default roles, admin user, system permissions
+-- Complete IAM Platform Database Schema Initialization
+-- Merged from V1, V2, V3, V5, V6 migration files
+-- ============================================================
+-- This script combines all migrations into a single initialization script
+-- for fresh installations. For existing databases, use individual migration files.
 -- ============================================================
 
 -- ============================================================
@@ -49,12 +48,12 @@ COMMENT ON COLUMN t_role.tenant_id IS 'Role owning tenant (null for global roles
 COMMENT ON COLUMN t_role.role_type IS 'Role type: SYSTEM/TENANT_CUSTOM';
 COMMENT ON COLUMN t_role.is_system IS 'System built-in role (cannot be deleted)';
 
--- t_user - Legacy user table (kept for compatibility)
+-- t_user - User table (renamed from t_person in V2)
 CREATE TABLE t_user (
     id              BIGSERIAL PRIMARY KEY,
     username        VARCHAR(50) NOT NULL UNIQUE,
     email           VARCHAR(255) NOT NULL UNIQUE,
-    password_hash   VARCHAR(255) NOT NULL,
+    password_hash   VARCHAR(255),  -- Made nullable in V5, migrated to t_user_credential
     nickname        VARCHAR(100),
     avatar_url      VARCHAR(512),
     phone           VARCHAR(20),
@@ -64,6 +63,8 @@ CREATE TABLE t_user (
     email_verified  BOOLEAN NOT NULL DEFAULT FALSE,
     enabled         BOOLEAN NOT NULL DEFAULT TRUE,
     account_locked  BOOLEAN NOT NULL DEFAULT FALSE,
+    user_code       VARCHAR(50) NOT NULL UNIQUE,  -- Added in V6
+    last_login_at   TIMESTAMP,                     -- Added in V6
     created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -72,15 +73,16 @@ CREATE INDEX idx_user_username ON t_user(username);
 CREATE INDEX idx_user_email ON t_user(email);
 CREATE INDEX idx_user_phone ON t_user(phone);
 CREATE INDEX idx_user_provider ON t_user(provider, provider_user_id);
+CREATE UNIQUE INDEX uk_user_code ON t_user(user_code);  -- Added in V6
 
 CREATE TRIGGER update_t_user_updated_at
     BEFORE UPDATE ON t_user
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-COMMENT ON TABLE t_user IS 'User table (legacy, migrated to t_person)';
-COMMENT ON COLUMN t_user.username IS 'Username';
-COMMENT ON COLUMN t_user.email IS 'Email';
-COMMENT ON COLUMN t_user.password_hash IS 'BCrypt hashed password';
+COMMENT ON TABLE t_user IS 'User table (global identity)';
+COMMENT ON COLUMN t_user.username IS 'Login username (globally unique)';
+COMMENT ON COLUMN t_user.email IS 'Email (globally unique, nullable)';
+COMMENT ON COLUMN t_user.password_hash IS 'BCrypt hashed password (legacy, migrated to t_user_credential)';
 COMMENT ON COLUMN t_user.nickname IS 'Display name';
 COMMENT ON COLUMN t_user.avatar_url IS 'Avatar URL';
 COMMENT ON COLUMN t_user.phone IS 'Phone number for SMS verification';
@@ -90,6 +92,8 @@ COMMENT ON COLUMN t_user.phone_verified IS 'Phone number verified flag';
 COMMENT ON COLUMN t_user.email_verified IS 'Email verified flag';
 COMMENT ON COLUMN t_user.enabled IS 'Account enabled flag';
 COMMENT ON COLUMN t_user.account_locked IS 'Account locked flag';
+COMMENT ON COLUMN t_user.user_code IS 'User code (e.g. USER-000001)';
+COMMENT ON COLUMN t_user.last_login_at IS 'Last login timestamp';
 
 -- t_user_role - User-Role join table (legacy)
 CREATE TABLE t_user_role (
@@ -103,6 +107,36 @@ CREATE INDEX idx_user_role_user_id ON t_user_role(user_id);
 CREATE INDEX idx_user_role_role_id ON t_user_role(role_id);
 
 COMMENT ON TABLE t_user_role IS 'User-Role relationship table (legacy)';
+
+-- t_user_external_login - User external login (third-party OAuth2)
+CREATE TABLE t_user_external_login (
+    id                  BIGSERIAL PRIMARY KEY,
+    user_id             BIGINT NOT NULL REFERENCES t_user(id),
+    provider            VARCHAR(50) NOT NULL,
+    provider_user_id    VARCHAR(255) NOT NULL,
+    access_token        TEXT,
+    refresh_token       TEXT,
+    expires_at          TIMESTAMP,
+    last_used_at        TIMESTAMP,
+    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMP NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uk_user_provider UNIQUE (user_id, provider, provider_user_id)
+);
+
+CREATE INDEX idx_user_external_login_user ON t_user_external_login(user_id);
+CREATE INDEX idx_user_external_login_provider ON t_user_external_login(provider, provider_user_id);
+
+CREATE TRIGGER update_t_user_external_login_updated_at
+    BEFORE UPDATE ON t_user_external_login
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+COMMENT ON TABLE t_user_external_login IS 'User external login (third-party OAuth2)';
+COMMENT ON COLUMN t_user_external_login.user_id IS 'Associated user ID';
+COMMENT ON COLUMN t_user_external_login.provider IS 'OAuth2 provider (e.g. google, github, wechat)';
+COMMENT ON COLUMN t_user_external_login.provider_user_id IS 'User ID from provider';
+COMMENT ON COLUMN t_user_external_login.access_token IS 'Access token (encrypted)';
+COMMENT ON COLUMN t_user_external_login.refresh_token IS 'Refresh token (encrypted)';
 
 -- ============================================================
 -- OAuth2 Authorization Tables (Spring Authorization Server)
@@ -166,7 +200,7 @@ CREATE TABLE oauth2_authorization_consent (
 COMMENT ON TABLE oauth2_authorization_consent IS 'Spring Authorization Server consent storage';
 
 -- ============================================================
--- Multi-Tenant Tables: t_tenant, t_person, t_tenant_account
+-- Multi-Tenant Tables: t_tenant, t_user_tenant_mapping
 -- ============================================================
 
 -- t_tenant - Tenant table
@@ -196,79 +230,37 @@ COMMENT ON COLUMN t_tenant.status IS 'Tenant status: ACTIVE/SUSPENDED/DELETED';
 COMMENT ON COLUMN t_tenant.max_users IS 'Maximum number of users allowed';
 COMMENT ON COLUMN t_tenant.expires_at IS 'Tenant expiration time';
 
--- t_person - Person (natural person) table
-CREATE TABLE t_person (
+-- t_user_tenant_mapping - User-Tenant direct mapping (replaces TenantAccount from V2)
+CREATE TABLE t_user_tenant_mapping (
     id              BIGSERIAL PRIMARY KEY,
-    person_code     VARCHAR(50) NOT NULL UNIQUE,
-    username        VARCHAR(100) NOT NULL UNIQUE,
-    email           VARCHAR(255),
-    phone           VARCHAR(20),
-    password_hash   VARCHAR(255) NOT NULL,
-    email_verified  BOOLEAN NOT NULL DEFAULT FALSE,
-    phone_verified  BOOLEAN NOT NULL DEFAULT FALSE,
-    nickname        VARCHAR(100),
-    avatar_url      VARCHAR(512),
-    enabled         BOOLEAN NOT NULL DEFAULT TRUE,
-    account_locked  BOOLEAN NOT NULL DEFAULT FALSE,
-    last_login_at   TIMESTAMP,
+    user_id         BIGINT NOT NULL REFERENCES t_user(id),
+    tenant_id       BIGINT NOT NULL REFERENCES t_tenant(id),
+    account_code    VARCHAR(50),
+    employee_no     VARCHAR(50),
+    status          VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    preferred_language VARCHAR(10) DEFAULT 'zh-CN',
+    timezone        VARCHAR(50) DEFAULT 'Asia/Shanghai',
+    joined_at       TIMESTAMP NOT NULL DEFAULT NOW(),
+    left_at         TIMESTAMP,
     created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
+    updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    
+    CONSTRAINT uk_user_tenant UNIQUE (user_id, tenant_id),
+    CONSTRAINT uk_user_tenant_account_code UNIQUE (tenant_id, account_code),
+    CONSTRAINT uk_user_tenant_employee_no UNIQUE (tenant_id, employee_no)
 );
 
-CREATE UNIQUE INDEX uk_person_code ON t_person(person_code);
-CREATE UNIQUE INDEX uk_person_username ON t_person(username);
-CREATE UNIQUE INDEX uk_person_email ON t_person(email) WHERE email IS NOT NULL;
-CREATE UNIQUE INDEX uk_person_phone ON t_person(phone) WHERE phone IS NOT NULL;
+CREATE INDEX idx_user_tenant_user ON t_user_tenant_mapping(user_id);
+CREATE INDEX idx_user_tenant_tenant ON t_user_tenant_mapping(tenant_id);
+CREATE INDEX idx_user_tenant_status ON t_user_tenant_mapping(status);
 
-CREATE TRIGGER update_t_person_updated_at
-    BEFORE UPDATE ON t_person
+CREATE TRIGGER update_t_user_tenant_mapping_updated_at
+    BEFORE UPDATE ON t_user_tenant_mapping
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-COMMENT ON TABLE t_person IS 'Person (natural person) table - global identity';
-COMMENT ON COLUMN t_person.person_code IS 'Globally unique person code (e.g. PERSON-000001)';
-COMMENT ON COLUMN t_person.username IS 'Login username (globally unique)';
-COMMENT ON COLUMN t_person.email IS 'Email (globally unique, nullable)';
-COMMENT ON COLUMN t_person.phone IS 'Phone number (globally unique, nullable)';
-COMMENT ON COLUMN t_person.password_hash IS 'BCrypt hashed password';
-COMMENT ON COLUMN t_person.enabled IS 'Whether account is enabled globally';
-COMMENT ON COLUMN t_person.account_locked IS 'Whether account is locked';
-COMMENT ON COLUMN t_person.last_login_at IS 'Last login time (any tenant)';
-
--- t_tenant_account - Tenant Account table
-CREATE TABLE t_tenant_account (
-    id                  BIGSERIAL PRIMARY KEY,
-    person_id           BIGINT NOT NULL REFERENCES t_person(id),
-    tenant_id           BIGINT NOT NULL REFERENCES t_tenant(id),
-    account_code        VARCHAR(50) NOT NULL,
-    employee_no         VARCHAR(50),
-    status              VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    joined_at           TIMESTAMP NOT NULL DEFAULT NOW(),
-    left_at             TIMESTAMP,
-    preferred_language  VARCHAR(10) DEFAULT 'zh-CN',
-    timezone            VARCHAR(50) DEFAULT 'Asia/Shanghai',
-    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT uk_tenant_account_code UNIQUE (tenant_id, account_code),
-    CONSTRAINT uk_tenant_employee_no UNIQUE (tenant_id, employee_no)
-);
-
-CREATE INDEX idx_tenant_account_person_id ON t_tenant_account(person_id);
-CREATE INDEX idx_tenant_account_tenant_id ON t_tenant_account(tenant_id);
-CREATE INDEX idx_tenant_account_status ON t_tenant_account(status);
-
-CREATE TRIGGER update_t_tenant_account_updated_at
-    BEFORE UPDATE ON t_tenant_account
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-COMMENT ON TABLE t_tenant_account IS 'Tenant account table - user identity within a tenant';
-COMMENT ON COLUMN t_tenant_account.person_id IS 'Associated person ID';
-COMMENT ON COLUMN t_tenant_account.tenant_id IS 'Associated tenant ID';
-COMMENT ON COLUMN t_tenant_account.account_code IS 'Account code within tenant (tenant-unique)';
-COMMENT ON COLUMN t_tenant_account.employee_no IS 'Employee number within tenant (tenant-unique)';
-COMMENT ON COLUMN t_tenant_account.status IS 'Account status: ACTIVE/SUSPENDED/LEFT';
-COMMENT ON COLUMN t_tenant_account.joined_at IS 'Time when joined the tenant';
-COMMENT ON COLUMN t_tenant_account.left_at IS 'Time when left the tenant';
+COMMENT ON TABLE t_user_tenant_mapping IS 'User-Tenant direct mapping (replaces TenantAccount)';
+COMMENT ON COLUMN t_user_tenant_mapping.account_code IS 'Account code within tenant';
+COMMENT ON COLUMN t_user_tenant_mapping.employee_no IS 'Employee number within tenant';
 
 -- ============================================================
 -- Organization Tables
@@ -318,29 +310,30 @@ COMMENT ON COLUMN t_organization.sort_order IS 'Sort order within siblings';
 COMMENT ON COLUMN t_organization.manager_id IS 'Manager tenant_account ID';
 COMMENT ON COLUMN t_organization.status IS 'Organization status: ACTIVE/INACTIVE';
 
--- t_tenant_account_organization_mapping
-CREATE TABLE t_tenant_account_organization_mapping (
+-- t_user_organization_mapping (renamed from t_tenant_account_organization_mapping in V2)
+CREATE TABLE t_user_organization_mapping (
     id                  BIGSERIAL PRIMARY KEY,
-    tenant_account_id   BIGINT NOT NULL REFERENCES t_tenant_account(id),
+    user_tenant_mapping_id   BIGINT NOT NULL REFERENCES t_user_tenant_mapping(id),
     organization_id     BIGINT NOT NULL REFERENCES t_organization(id),
     is_primary          BOOLEAN NOT NULL DEFAULT FALSE,
     position            VARCHAR(100),
     joined_org_at       TIMESTAMP NOT NULL DEFAULT NOW(),
 
-    CONSTRAINT uk_tenant_account_org UNIQUE (tenant_account_id, organization_id)
+    CONSTRAINT uk_user_org_mapping UNIQUE (user_tenant_mapping_id, organization_id)
 );
 
-CREATE INDEX idx_ta_org_mapping_tenant_account ON t_tenant_account_organization_mapping(tenant_account_id);
-CREATE INDEX idx_ta_org_mapping_organization ON t_tenant_account_organization_mapping(organization_id);
+CREATE INDEX idx_user_org_mapping_user_tenant ON t_user_organization_mapping(user_tenant_mapping_id);
+CREATE INDEX idx_user_org_mapping_organization ON t_user_organization_mapping(organization_id);
 
--- Ensure only one primary organization per tenant account
-CREATE UNIQUE INDEX uk_ta_org_mapping_primary
-    ON t_tenant_account_organization_mapping(tenant_account_id)
+-- Ensure only one primary organization per user-tenant mapping
+CREATE UNIQUE INDEX uk_user_org_mapping_primary
+    ON t_user_organization_mapping(user_tenant_mapping_id)
     WHERE is_primary = true;
 
-COMMENT ON TABLE t_tenant_account_organization_mapping IS 'TenantAccount-Organization many-to-many mapping';
-COMMENT ON COLUMN t_tenant_account_organization_mapping.is_primary IS 'Whether this is the primary organization';
-COMMENT ON COLUMN t_tenant_account_organization_mapping.position IS 'Position title within organization';
+COMMENT ON TABLE t_user_organization_mapping IS 'User-Organization mapping (via UserTenantMapping)';
+COMMENT ON COLUMN t_user_organization_mapping.user_tenant_mapping_id IS 'Associated UserTenantMapping ID';
+COMMENT ON COLUMN t_user_organization_mapping.is_primary IS 'Whether this is the primary organization';
+COMMENT ON COLUMN t_user_organization_mapping.position IS 'Position title within organization';
 
 -- ============================================================
 -- Application & Permission Tables
@@ -388,32 +381,56 @@ COMMENT ON COLUMN t_application.status IS 'Application status: ACTIVE/INACTIVE/R
 COMMENT ON COLUMN t_application.callback_urls IS 'OAuth2 callback URIs (comma-separated)';
 COMMENT ON COLUMN t_application.allowed_scopes IS 'Allowed OAuth2 scopes (comma-separated)';
 
--- t_application_permission - Application-level permissions
-CREATE TABLE t_application_permission (
-    id                  BIGSERIAL PRIMARY KEY,
-    application_id      BIGINT NOT NULL REFERENCES t_application(id),
-    permission_code     VARCHAR(100) NOT NULL,
-    permission_name     VARCHAR(200) NOT NULL,
-    resource_type       VARCHAR(100) NOT NULL,
-    action              VARCHAR(50) NOT NULL,
-    description         VARCHAR(500),
-    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT uk_app_permission_code UNIQUE (application_id, permission_code)
+-- t_application_resource - Application resources (menu, button, API) - from V2
+CREATE TABLE t_application_resource (
+    id              BIGSERIAL PRIMARY KEY,
+    application_id  BIGINT NOT NULL REFERENCES t_application(id),
+    resource_code   VARCHAR(100) NOT NULL,
+    resource_name   VARCHAR(100) NOT NULL,
+    resource_type   VARCHAR(20) NOT NULL,
+    icon            VARCHAR(50),
+    path            VARCHAR(200),
+    api_path        VARCHAR(200),
+    api_method      VARCHAR(10),
+    sort_order      INTEGER DEFAULT 0,
+    parent_id       BIGINT REFERENCES t_application_resource(id),
+    description     VARCHAR(500),
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    
+    CONSTRAINT uk_app_resource_code UNIQUE (application_id, resource_code)
 );
 
-CREATE INDEX idx_app_permission_application_id ON t_application_permission(application_id);
-CREATE INDEX idx_app_permission_resource_type ON t_application_permission(resource_type, action);
+CREATE INDEX idx_app_resource_app ON t_application_resource(application_id);
+CREATE INDEX idx_app_resource_type ON t_application_resource(resource_type);
+CREATE INDEX idx_app_resource_parent ON t_application_resource(parent_id);
 
-CREATE TRIGGER update_t_application_permission_updated_at
-    BEFORE UPDATE ON t_application_permission
+CREATE TRIGGER update_t_application_resource_updated_at
+    BEFORE UPDATE ON t_application_resource
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-COMMENT ON TABLE t_application_permission IS 'Application-level permissions';
-COMMENT ON COLUMN t_application_permission.permission_code IS 'Permission code (e.g. app:user:read)';
-COMMENT ON COLUMN t_application_permission.resource_type IS 'Resource type (e.g. user, order, report)';
-COMMENT ON COLUMN t_application_permission.action IS 'Action: READ/WRITE/DELETE/EXECUTE';
+COMMENT ON TABLE t_application_resource IS 'Application resources (menu, button, API)';
+COMMENT ON COLUMN t_application_resource.resource_code IS 'Resource code (e.g. app:oa:user:read)';
+COMMENT ON COLUMN t_application_resource.resource_type IS 'Resource type: MENU/BUTTON/API';
+COMMENT ON COLUMN t_application_resource.path IS 'Frontend route path (for MENU)';
+COMMENT ON COLUMN t_application_resource.api_path IS 'Backend API path (for API)';
+COMMENT ON COLUMN t_application_resource.api_method IS 'HTTP method (GET/POST/PUT/DELETE)';
+
+-- t_application_tenant_mapping - from V2
+CREATE TABLE t_application_tenant_mapping (
+    id              BIGSERIAL PRIMARY KEY,
+    application_id  BIGINT NOT NULL REFERENCES t_application(id),
+    tenant_id       BIGINT NOT NULL REFERENCES t_tenant(id),
+    enabled         BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    
+    CONSTRAINT uk_app_tenant UNIQUE (application_id, tenant_id)
+);
+
+CREATE INDEX idx_app_tenant_app ON t_application_tenant_mapping(application_id);
+CREATE INDEX idx_app_tenant_tenant ON t_application_tenant_mapping(tenant_id);
+
+COMMENT ON TABLE t_application_tenant_mapping IS 'Application-Tenant mapping (which apps are available to which tenants)';
 
 -- t_resource_permission - Resource permission table
 CREATE TABLE t_resource_permission (
@@ -460,120 +477,142 @@ CREATE INDEX idx_role_permission_permission ON t_role_permission(permission_id);
 
 COMMENT ON TABLE t_role_permission IS 'Role-Permission many-to-many mapping';
 
--- t_tenant_account_role_mapping - TenantAccount-Role mapping
-CREATE TABLE t_tenant_account_role_mapping (
-    id                  BIGSERIAL PRIMARY KEY,
-    tenant_account_id   BIGINT NOT NULL REFERENCES t_tenant_account(id),
-    role_id             BIGINT NOT NULL REFERENCES t_role(id),
-    assigned_at         TIMESTAMP NOT NULL DEFAULT NOW(),
-    assigned_by         VARCHAR(100),
-
-    CONSTRAINT uk_tenant_account_role UNIQUE (tenant_account_id, role_id)
+-- t_user_role_mapping - User-Role mapping (direct association with tenant context) - from V2
+CREATE TABLE t_user_role_mapping (
+    id              BIGSERIAL PRIMARY KEY,
+    user_id         BIGINT NOT NULL REFERENCES t_user(id),
+    tenant_id       BIGINT NOT NULL REFERENCES t_tenant(id),
+    role_id         BIGINT NOT NULL REFERENCES t_role(id),
+    assigned_at     TIMESTAMP NOT NULL DEFAULT NOW(),
+    assigned_by     BIGINT REFERENCES t_user(id),
+    
+    CONSTRAINT uk_user_role_tenant UNIQUE (user_id, tenant_id, role_id)
 );
 
-CREATE INDEX idx_ta_role_mapping_tenant_account ON t_tenant_account_role_mapping(tenant_account_id);
-CREATE INDEX idx_ta_role_mapping_role ON t_tenant_account_role_mapping(role_id);
+CREATE INDEX idx_user_role_user ON t_user_role_mapping(user_id);
+CREATE INDEX idx_user_role_tenant ON t_user_role_mapping(tenant_id);
+CREATE INDEX idx_user_role_role ON t_user_role_mapping(role_id);
 
-COMMENT ON TABLE t_tenant_account_role_mapping IS 'TenantAccount-Role many-to-many mapping';
-COMMENT ON COLUMN t_tenant_account_role_mapping.assigned_at IS 'Role assignment time';
-COMMENT ON COLUMN t_tenant_account_role_mapping.assigned_by IS 'Who assigned this role';
+COMMENT ON TABLE t_user_role_mapping IS 'User-Role mapping (direct association with tenant context)';
 
--- t_person_external_login - Person external login (third-party)
-CREATE TABLE t_person_external_login (
-    id                  BIGSERIAL PRIMARY KEY,
-    person_id           BIGINT NOT NULL REFERENCES t_person(id),
-    provider            VARCHAR(50) NOT NULL,
-    provider_user_id    VARCHAR(255) NOT NULL,
-    access_token        TEXT,
-    refresh_token       TEXT,
-    expires_at          TIMESTAMP,
-    last_used_at        TIMESTAMP,
-    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMP NOT NULL DEFAULT NOW(),
+-- ============================================================
+-- Platform Menu Tables - from V2
+-- ============================================================
 
-    CONSTRAINT uk_person_provider UNIQUE (person_id, provider, provider_user_id)
+CREATE TABLE t_platform_menu (
+    id              BIGSERIAL PRIMARY KEY,
+    menu_code       VARCHAR(50) NOT NULL UNIQUE,
+    menu_name       VARCHAR(100) NOT NULL,
+    icon            VARCHAR(50),
+    path            VARCHAR(100),
+    sort_order      INTEGER DEFAULT 0,
+    parent_id       BIGINT REFERENCES t_platform_menu(id),
+    description     VARCHAR(500),
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_person_external_login_person ON t_person_external_login(person_id);
-CREATE INDEX idx_person_external_login_provider ON t_person_external_login(provider, provider_user_id);
-
-CREATE TRIGGER update_t_person_external_login_updated_at
-    BEFORE UPDATE ON t_person_external_login
+CREATE TRIGGER update_t_platform_menu_updated_at
+    BEFORE UPDATE ON t_platform_menu
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-COMMENT ON TABLE t_person_external_login IS 'Person external login (third-party OAuth2)';
-COMMENT ON COLUMN t_person_external_login.provider IS 'OAuth2 provider (e.g. google, github, wechat)';
-COMMENT ON COLUMN t_person_external_login.provider_user_id IS 'User ID from provider';
-COMMENT ON COLUMN t_person_external_login.access_token IS 'Access token (encrypted)';
-COMMENT ON COLUMN t_person_external_login.refresh_token IS 'Refresh token (encrypted)';
+COMMENT ON TABLE t_platform_menu IS 'Platform function menu definitions';
 
--- ============================================================
--- Audit Log Table
--- ============================================================
-
--- t_audit_log - Audit log table
-CREATE TABLE t_audit_log (
-    id                  BIGSERIAL PRIMARY KEY,
-    tenant_id           BIGINT REFERENCES t_tenant(id) ON DELETE SET NULL,
-    person_id           BIGINT,  -- No FK constraint: person may be deleted
-    username            VARCHAR(100),
-    event_type          VARCHAR(30) NOT NULL,
-    event_category      VARCHAR(20) NOT NULL,
-    resource_id         BIGINT,
-    resource_type       VARCHAR(50),
-    action              VARCHAR(200),
-    ip_address          VARCHAR(45),     -- IPv6 max length
-    user_agent          VARCHAR(500),
-    request_uri         VARCHAR(500),
-    request_params      TEXT,            -- JSON-formatted request parameters
-    result              VARCHAR(10) NOT NULL,
-    error_message       VARCHAR(2000),
-    created_at          TIMESTAMP NOT NULL DEFAULT NOW()
+CREATE TABLE t_tenant_menu_config (
+    id              BIGSERIAL PRIMARY KEY,
+    tenant_id       BIGINT NOT NULL REFERENCES t_tenant(id),
+    menu_id         BIGINT NOT NULL REFERENCES t_platform_menu(id),
+    enabled         BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    
+    CONSTRAINT uk_tenant_menu UNIQUE (tenant_id, menu_id)
 );
 
--- Indexes for t_audit_log
-CREATE INDEX idx_audit_tenant_id ON t_audit_log(tenant_id);
-CREATE INDEX idx_audit_person_id ON t_audit_log(person_id);
-CREATE INDEX idx_audit_event_type ON t_audit_log(event_type);
-CREATE INDEX idx_audit_event_category ON t_audit_log(event_category);
-CREATE INDEX idx_audit_resource ON t_audit_log(resource_type, resource_id);
-CREATE INDEX idx_audit_result ON t_audit_log(result);
-CREATE INDEX idx_audit_created_at ON t_audit_log(created_at);
-CREATE INDEX idx_audit_tenant_category_time ON t_audit_log(tenant_id, event_category, created_at);
+CREATE INDEX idx_tenant_menu_tenant ON t_tenant_menu_config(tenant_id);
+CREATE INDEX idx_tenant_menu_menu ON t_tenant_menu_config(menu_id);
 
-COMMENT ON TABLE t_audit_log IS 'Audit log table - records all critical operations';
-COMMENT ON COLUMN t_audit_log.tenant_id IS 'Tenant ID that owns this audit record (null for system-level operations)';
-COMMENT ON COLUMN t_audit_log.person_id IS 'Operator person ID';
-COMMENT ON COLUMN t_audit_log.username IS 'Operator username';
-COMMENT ON COLUMN t_audit_log.event_type IS 'Event type: LOGIN_SUCCESS, ROLE_ASSIGN, etc.';
-COMMENT ON COLUMN t_audit_log.event_category IS 'Event category: AUTHENTICATION, AUTHORIZATION, ACCOUNT, ADMINISTRATION, SESSION';
-COMMENT ON COLUMN t_audit_log.resource_id IS 'Related resource ID';
-COMMENT ON COLUMN t_audit_log.resource_type IS 'Resource type: user, tenant, role, application, organization';
-COMMENT ON COLUMN t_audit_log.action IS 'Operation description';
-COMMENT ON COLUMN t_audit_log.ip_address IS 'Client IP address';
-COMMENT ON COLUMN t_audit_log.user_agent IS 'Client User-Agent header';
-COMMENT ON COLUMN t_audit_log.request_uri IS 'Request URI';
-COMMENT ON COLUMN t_audit_log.request_params IS 'Request parameters (JSON, sensitive data masked)';
-COMMENT ON COLUMN t_audit_log.result IS 'Operation result: SUCCESS/FAILURE';
-COMMENT ON COLUMN t_audit_log.error_message IS 'Error message (on failure)';
+COMMENT ON TABLE t_tenant_menu_config IS 'Tenant menu configuration (which platform menus are visible to tenant)';
 
--- Cleanup function for old audit logs
-CREATE OR REPLACE FUNCTION cleanup_old_audit_logs(retention_days INTEGER DEFAULT 180)
-RETURNS INTEGER AS $$
-DECLARE
-    cutoff_date TIMESTAMP;
-    deleted_count INTEGER;
-BEGIN
-    cutoff_date := NOW() - (retention_days || ' days')::INTERVAL;
-    
-    DELETE FROM t_audit_log WHERE created_at < cutoff_date;
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    
-    RETURN deleted_count;
-END;
-$$ LANGUAGE plpgsql;
+-- ============================================================
+-- User Credential Table - from V5
+-- ============================================================
 
-COMMENT ON FUNCTION cleanup_old_audit_logs IS 'Cleanup expired audit logs, default retention is 180 days';
+CREATE TABLE t_user_credential (
+    id                  BIGSERIAL PRIMARY KEY,
+    user_id             BIGINT NOT NULL REFERENCES t_user(id) ON DELETE CASCADE,
+    credential_type     VARCHAR(30) NOT NULL,
+    credential_value    TEXT NOT NULL,
+    algorithm           VARCHAR(30) DEFAULT 'BCRYPT',
+    is_primary          BOOLEAN NOT NULL DEFAULT FALSE,
+    expires_at          TIMESTAMP,
+    last_used_at        TIMESTAMP,
+    status              VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    description         VARCHAR(255),
+    created_at          TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMP NOT NULL DEFAULT NOW(),
+    created_by          VARCHAR(100) DEFAULT 'system',
+
+    CONSTRAINT chk_credential_type CHECK (credential_type IN ('PASSWORD', 'CERTIFICATE')),
+    CONSTRAINT chk_credential_status CHECK (status IN ('ACTIVE', 'EXPIRED', 'REVOKED'))
+);
+
+CREATE INDEX idx_cred_user_id ON t_user_credential(user_id);
+CREATE INDEX idx_cred_user_type ON t_user_credential(user_id, credential_type);
+CREATE INDEX idx_cred_expires ON t_user_credential(expires_at)
+    WHERE expires_at IS NOT NULL AND status = 'ACTIVE';
+
+-- Unique constraint: each user can have only one primary credential per type
+CREATE UNIQUE INDEX uk_user_type_primary ON t_user_credential(user_id, credential_type)
+    WHERE is_primary = TRUE;
+
+CREATE TRIGGER update_t_user_credential_updated_at
+    BEFORE UPDATE ON t_user_credential
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+COMMENT ON TABLE t_user_credential IS 'User authentication credentials - stores persistent credentials (passwords, certificates)';
+COMMENT ON COLUMN t_user_credential.user_id IS 'Associated user ID';
+COMMENT ON COLUMN t_user_credential.credential_type IS 'Credential type: PASSWORD, CERTIFICATE';
+COMMENT ON COLUMN t_user_credential.credential_value IS 'Encrypted credential value (BCrypt hash for passwords, PEM for certificates)';
+COMMENT ON COLUMN t_user_credential.algorithm IS 'Encryption algorithm used: BCRYPT, SHA256, RSA, etc.';
+COMMENT ON COLUMN t_user_credential.is_primary IS 'Whether this is the primary credential for its type';
+COMMENT ON COLUMN t_user_credential.expires_at IS 'Credential expiration time (NULL = never expires)';
+COMMENT ON COLUMN t_user_credential.last_used_at IS 'Last time this credential was used for authentication';
+COMMENT ON COLUMN t_user_credential.status IS 'Credential status: ACTIVE, EXPIRED, REVOKED';
+
+-- ============================================================
+-- Application Permission Table
+-- ============================================================
+
+CREATE TABLE t_application_permission (
+    id              BIGSERIAL PRIMARY KEY,
+    application_id  BIGINT NOT NULL REFERENCES t_application(id) ON DELETE CASCADE,
+    permission_code VARCHAR(100) NOT NULL,
+    permission_name VARCHAR(200) NOT NULL,
+    resource_type   VARCHAR(100) NOT NULL,
+    action          VARCHAR(50) NOT NULL,
+    description     VARCHAR(500),
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uk_app_permission_code UNIQUE (application_id, permission_code)
+);
+
+CREATE INDEX idx_app_permission_app ON t_application_permission(application_id);
+
+CREATE TRIGGER update_t_application_permission_updated_at
+    BEFORE UPDATE ON t_application_permission
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+COMMENT ON TABLE t_application_permission IS 'Application-level permission definitions';
+COMMENT ON COLUMN t_application_permission.application_id IS 'Associated application ID';
+COMMENT ON COLUMN t_application_permission.permission_code IS 'Permission code (e.g. app:oa:user:read)';
+COMMENT ON COLUMN t_application_permission.resource_type IS 'Resource type: MENU, BUTTON, API';
+COMMENT ON COLUMN t_application_permission.action IS 'Action: READ, WRITE, DELETE, EXPORT, APPROVE, EXECUTE';
+
+-- ============================================================
+-- Note: Audit log tables are managed in iam-audit-server module
+-- See: iam-audit-server/src/main/resources/db/migration/V1__audit_schema_initialization.sql
+-- ============================================================
 
 -- ============================================================
 -- Seed Data: Default Roles
@@ -585,15 +624,21 @@ INSERT INTO t_role (code, name, description, is_system) VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- ============================================================
--- Seed Data: Default Tenant
+-- Seed Data: Default Tenants
 -- ============================================================
 
+-- Insert default tenant
 INSERT INTO t_tenant (id, tenant_code, tenant_name, status, created_at, updated_at)
 VALUES (1, 'default', '默认租户', 'ACTIVE', NOW(), NOW())
 ON CONFLICT DO NOTHING;
 
--- Reset tenant sequence
-SELECT setval('t_tenant_id_seq', (SELECT COALESCE(MAX(id), 0) FROM t_tenant));
+-- Insert platform management tenant (from V2)
+INSERT INTO t_tenant (id, tenant_code, tenant_name, status, max_users, created_at, updated_at)
+VALUES (0, 'iam-platform', 'IAM Platform Management', 'ACTIVE', 10, NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
+
+-- Reset tenant sequence (ensure it starts after the max ID)
+SELECT setval('t_tenant_id_seq', (SELECT COALESCE(MAX(id), 0) FROM t_tenant), true);
 
 -- ============================================================
 -- Seed Data: System Permissions
@@ -631,22 +676,36 @@ INSERT INTO t_resource_permission (id, tenant_id, permission_code, permission_na
 (24, NULL, 'permission:assign', '分配权限', 'permission', 'WRITE', '为角色分配权限'),
 
 (25, NULL, 'audit:read', '查看审计日志', 'audit', 'READ', '查看审计日志'),
-(26, NULL, 'audit:export', '导出审计日志', 'audit', 'EXPORT', '导出审计日志')
+(26, NULL, 'audit:export', '导出审计日志', 'audit', 'EXPORT', '导出审计日志'),
+
+-- Dashboard and session permissions (from V2)
+(27, NULL, 'dashboard:read', '查看仪表盘', 'dashboard', 'READ', '查看管理控制台仪表盘'),
+(28, NULL, 'session:read', '查看会话', 'session', 'READ', '查看SSO会话信息'),
+(29, NULL, 'session:delete', '管理会话', 'session', 'DELETE', '强制用户下线')
 ON CONFLICT (tenant_id, permission_code) DO NOTHING;
 
--- Reset permission sequence
-SELECT setval('t_resource_permission_id_seq', (SELECT COALESCE(MAX(id), 0) FROM t_resource_permission));
+-- Reset permission sequence (ensure it starts after the max ID)
+SELECT setval('t_resource_permission_id_seq', (SELECT COALESCE(MAX(id), 0) FROM t_resource_permission), true);
 
 -- ============================================================
--- Seed Data: Admin User (Legacy t_user for compatibility)
+-- Seed Data: Admin User
 -- ============================================================
 
 -- Insert admin user (BCrypt hash of "Admin@123")
-INSERT INTO t_user (username, email, password_hash, nickname, enabled, account_locked, email_verified, provider)
-VALUES ('admin', 'admin@example.com',
-        '$2b$10$dHn1Kr8cwvaUWaBu/0xcYukFiBsWEVCaABGfkG8bKv8o9R4eLzww.',
-        'Administrator', true, false, true, 'local')
-ON CONFLICT (username) DO NOTHING;
+INSERT INTO t_user (
+    id, user_code, username, email, password_hash, nickname, 
+    enabled, account_locked, email_verified, provider, 
+    last_login_at, created_at, updated_at
+)
+VALUES (
+    1, 'USER-000001', 'admin', 'admin@example.com',
+    '$2b$10$dHn1Kr8cwvaUWaBu/0xcYukFiBsWEVCaABGfkG8bKv8o9R4eLzww.',
+    'Administrator', true, false, true, 'local',
+    NULL, NOW(), NOW()
+) ON CONFLICT (username) DO NOTHING;
+
+-- Reset user sequence (ensure it starts after the max ID)
+SELECT setval('t_user_id_seq', (SELECT COALESCE(MAX(id), 0) FROM t_user), true);
 
 -- Link admin to ROLE_ADMIN (legacy)
 INSERT INTO t_user_role (user_id, role_id)
@@ -655,41 +714,87 @@ WHERE u.username = 'admin' AND r.code = 'ROLE_ADMIN'
 ON CONFLICT (user_id, role_id) DO NOTHING;
 
 -- ============================================================
--- Seed Data: Admin Person & TenantAccount (New Model)
+-- Seed Data: Admin User Credential (from V5)
 -- ============================================================
 
--- Insert admin person
-INSERT INTO t_person (
-    id, person_code, username, email, password_hash,
-    nickname, enabled, account_locked, email_verified, created_at, updated_at
-)
-VALUES (
-    1, 'PERSON-000001', 'admin', 'admin@example.com',
-    '$2b$10$dHn1Kr8cwvaUWaBu/0xcYukFiBsWEVCaABGfkG8bKv8o9R4eLzww.',
-    'Administrator', true, false, true, NOW(), NOW()
-) ON CONFLICT (username) DO NOTHING;
-
--- Reset person sequence
-SELECT setval('t_person_id_seq', (SELECT COALESCE(MAX(id), 0) FROM t_person));
-
--- Insert admin tenant account
-INSERT INTO t_tenant_account (
-    person_id, tenant_id, account_code, status, joined_at, created_at, updated_at
+-- Migrate admin user password to credential table
+INSERT INTO t_user_credential (
+    user_id, credential_type, credential_value, algorithm, is_primary, 
+    status, created_at, updated_at, created_by
 )
 SELECT 
-    p.id, 1, p.username, 'ACTIVE', NOW(), NOW(), NOW()
-FROM t_person p
-WHERE p.username = 'admin'
-ON CONFLICT (tenant_id, account_code) DO NOTHING;
+    id, 'PASSWORD', password_hash, 'BCRYPT', TRUE, 'ACTIVE', 
+    created_at, updated_at, 'system'
+FROM t_user
+WHERE username = 'admin' AND password_hash IS NOT NULL
+ON CONFLICT DO NOTHING;
 
--- Link admin tenant account to ROLE_ADMIN
-INSERT INTO t_tenant_account_role_mapping (tenant_account_id, role_id, assigned_at)
+-- ============================================================
+-- Seed Data: Admin User-Tenant Mapping (from V2)
+-- ============================================================
+
+-- Link admin user to default tenant
+INSERT INTO t_user_tenant_mapping (
+    user_id, tenant_id, account_code, status, joined_at, created_at, updated_at
+)
 SELECT 
-    ta.id, r.id, NOW()
-FROM t_tenant_account ta
+    u.id, 1, u.username, 'ACTIVE', NOW(), NOW(), NOW()
+FROM t_user u
+WHERE u.username = 'admin'
+ON CONFLICT (user_id, tenant_id) DO NOTHING;
+
+-- Link admin user to platform management tenant
+INSERT INTO t_user_tenant_mapping (
+    user_id, tenant_id, account_code, status, joined_at, created_at, updated_at
+)
+SELECT 
+    u.id, 0, u.username, 'ACTIVE', NOW(), NOW(), NOW()
+FROM t_user u
+WHERE u.username = 'admin'
+ON CONFLICT (user_id, tenant_id) DO NOTHING;
+
+-- Grant admin role to admin user for default tenant
+INSERT INTO t_user_role_mapping (user_id, tenant_id, role_id, assigned_at)
+SELECT 
+    u.id, 1, r.id, NOW()
+FROM t_user u
 CROSS JOIN t_role r
-WHERE ta.person_id = 1 AND ta.tenant_id = 1 AND r.code = 'ROLE_ADMIN'
-ON CONFLICT (tenant_account_id, role_id) DO NOTHING;
+WHERE u.username = 'admin' AND r.code = 'ROLE_ADMIN'
+ON CONFLICT (user_id, tenant_id, role_id) DO NOTHING;
+
+-- Grant admin role to admin user for platform tenant
+INSERT INTO t_user_role_mapping (user_id, tenant_id, role_id, assigned_at)
+SELECT 
+    u.id, 0, r.id, NOW()
+FROM t_user u
+CROSS JOIN t_role r
+WHERE u.username = 'admin' AND r.code = 'ROLE_ADMIN'
+ON CONFLICT (user_id, tenant_id, role_id) DO NOTHING;
+
+-- ============================================================
+-- Seed Data: Platform Menus (from V2)
+-- ============================================================
+
+INSERT INTO t_platform_menu (menu_code, menu_name, icon, path, sort_order) VALUES
+    ('dashboard', '仪表盘', 'Odometer', '/dashboard', 1),
+    ('tenant-management', '租户管理', 'OfficeBuilding', '/tenants', 2),
+    ('user-management', '用户管理', 'User', '/users', 3),
+    ('organization-management', '组织管理', 'School', '/organizations', 4),
+    ('application-management', '应用管理', 'Grid', '/applications', 5),
+    ('role-permission', '角色权限', 'Key', '/roles', 6),
+    ('audit-log', '审计日志', 'Document', '/audit', 7),
+    ('session-management', '会话管理', 'Monitor', '/sessions', 8),
+    ('system-settings', '系统设置', 'Setting', '/settings', 9)
+ON CONFLICT (menu_code) DO NOTHING;
+
+-- Assign all platform menus to platform management tenant
+INSERT INTO t_tenant_menu_config (tenant_id, menu_id, enabled)
+SELECT 
+    (SELECT id FROM t_tenant WHERE tenant_code = 'iam-platform'),
+    id,
+    TRUE
+FROM t_platform_menu
+ON CONFLICT DO NOTHING;
 
 -- ============================================================
 -- Assign Permissions to Roles

@@ -2,6 +2,7 @@ package iam.platform.auth.application.service.pipeline;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,13 +10,16 @@ import java.util.List;
 /**
  * Pre-authentication pipeline that executes all PreAuthHandler beans in order before the actual
  * authentication strategy runs.
+ * 
+ * REFACTORED: Changed from direct List injection to ObjectProvider to eliminate circular dependencies.
+ * ObjectProvider defers bean resolution until first use, breaking the cycle at construction time.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PreAuthenticationPipeline {
 
-    private final List<PreAuthHandler> handlers;
+    private final ObjectProvider<List<PreAuthHandler>> handlersProvider;
 
     /**
      * Execute all pre-authentication checks in order.
@@ -24,6 +28,7 @@ public class PreAuthenticationPipeline {
      * @throws PreAuthenticationException if any pre-authentication check fails
      */
     public void execute(PreAuthContext context) {
+        List<PreAuthHandler> handlers = handlersProvider.getIfAvailable(List::of);
         for (PreAuthHandler handler : handlers) {
             log.debug("Executing pre-auth handler: {}", handler.getClass().getSimpleName());
             handler.handle(context);
@@ -34,7 +39,7 @@ public class PreAuthenticationPipeline {
      * Record a failed authentication attempt for rate limiting and lockout tracking.
      */
     public void recordFailure(PreAuthContext context) {
-        // Find handlers that need to record failures
+        List<PreAuthHandler> handlers = handlersProvider.getIfAvailable(List::of);
         for (PreAuthHandler handler : handlers) {
             if (handler instanceof RateLimitHandler rateLimitHandler) {
                 rateLimitHandler.recordFailure(context);
@@ -48,7 +53,7 @@ public class PreAuthenticationPipeline {
      * Record a successful authentication attempt to reset counters.
      */
     public void recordSuccess(PreAuthContext context) {
-        // Find handlers that need to record successes
+        List<PreAuthHandler> handlers = handlersProvider.getIfAvailable(List::of);
         for (PreAuthHandler handler : handlers) {
             if (handler instanceof RateLimitHandler rateLimitHandler) {
                 rateLimitHandler.recordSuccess(context);

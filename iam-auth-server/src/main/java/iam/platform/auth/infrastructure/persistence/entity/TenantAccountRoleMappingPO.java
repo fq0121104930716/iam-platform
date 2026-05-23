@@ -13,7 +13,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "t_tenant_account_role_mapping")
+@Table(name = "t_user_role_mapping")
 @Getter
 @NoArgsConstructor
 public class TenantAccountRoleMappingPO {
@@ -24,8 +24,12 @@ public class TenantAccountRoleMappingPO {
     private Long id;
 
     @Setter
-    @Column(name = "tenant_account_id", nullable = false)
-    private Long tenantAccountId;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Setter
+    @Column(name = "tenant_id", nullable = false)
+    private Long tenantId;
 
     @Setter
     @Column(name = "role_id", nullable = false)
@@ -36,11 +40,12 @@ public class TenantAccountRoleMappingPO {
     private LocalDateTime assignedAt;
 
     @Setter
-    @Column(name = "assigned_by", length = 100)
-    private String assignedBy;
+    @Column(name = "assigned_by")
+    private Long assignedBy;
 
-    public TenantAccountRoleMappingPO(Long tenantAccountId, Long roleId) {
-        this.tenantAccountId = tenantAccountId;
+    public TenantAccountRoleMappingPO(Long userId, Long tenantId, Long roleId) {
+        this.userId = userId;
+        this.tenantId = tenantId;
         this.roleId = roleId;
         this.assignedAt = LocalDateTime.now();
     }

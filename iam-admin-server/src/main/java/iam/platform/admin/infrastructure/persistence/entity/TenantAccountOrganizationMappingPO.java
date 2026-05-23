@@ -13,7 +13,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "t_tenant_account_organization_mapping")
+@Table(name = "t_user_organization_mapping")
 @Getter
 @NoArgsConstructor
 public class TenantAccountOrganizationMappingPO {
@@ -24,7 +24,7 @@ public class TenantAccountOrganizationMappingPO {
     private Long id;
 
     @Setter
-    @Column(name = "tenant_account_id", nullable = false)
+    @Column(name = "user_tenant_mapping_id", nullable = false)
     private Long tenantAccountId;
 
     @Setter

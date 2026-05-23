@@ -30,15 +30,8 @@ public class CreateUserRequest {
     @Size(max = 500)
     private String avatarUrl;
 
-    /**
-     * Initial password for user registration. This field is only used during self-registration flow
-     * and will not be persisted directly. The password will be used to create a UserCredential
-     * after user creation.
-     * 
-     * @deprecated Use separate credential creation API instead. This field is kept for registration
-     *             flow compatibility.
-     */
-    @Deprecated
+    // TODO: This field should be removed once registration flow is refactored to use
+    // separate credential creation API. Currently needed for RegistrationController.
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     private String password;
 }

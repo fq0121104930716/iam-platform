@@ -10,88 +10,6 @@ server:
 spring:
   application:
     name: iam-gateway
-  cloud:
-    gateway:
-      discovery:
-        locator:
-          enabled: false  # 不自动创建路由，使用手动配置
-      routes:
-        # BFF服务路由 - 优先匹配
-        - id: bff-service
-          uri: lb://iam-bff-service
-          predicates:
-            - Path=/bff/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 100
-                redis-rate-limiter.burstCapacity: 200
-                redis-rate-limiter.requestedTokens: 1
-
-        # 前端静态资源路由 - admin-ui
-        - id: admin-ui-static
-          uri: lb://iam-bff-service
-          predicates:
-            - Path=/admin-ui/**
-          filters:
-            - StripPrefix=0
-
-        # 根路径重定向到admin-ui
-        - id: admin-ui-index
-          uri: lb://iam-bff-service
-          predicates:
-            - Path=/
-
-        # 认证服务路由 - 基于路径
-        - id: auth-service-path
-          uri: lb://iam-auth-service
-          predicates:
-            - Path=/auth/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 100
-                redis-rate-limiter.burstCapacity: 200
-                redis-rate-limiter.requestedTokens: 1
-
-        # 管理服务路由 - 基于路径
-        - id: admin-service-path
-          uri: lb://iam-admin-service
-          predicates:
-            - Path=/admin/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 50
-                redis-rate-limiter.burstCapacity: 100
-                redis-rate-limiter.requestedTokens: 1
-
-        # 认证服务路由 - 基于域名
-        - id: auth-service-domain
-          uri: lb://iam-auth-service
-          predicates:
-            - Host=auth.iam.local,auth.iam.local:**
-
-        # 管理服务路由 - 基于域名
-        - id: admin-service-domain
-          uri: lb://iam-admin-service
-          predicates:
-            - Host=admin.iam.local,admin.iam.local:**
-
-      # 全局跨域配置
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOriginPatterns: "*"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-            allowedHeaders: "*"
-            allowCredentials: true
-            maxAge: 3600
 
   security:
     oauth2:
@@ -105,16 +23,17 @@ spring:
             scope: openid,profile,email
         provider:
           gateway-sso:
-            issuer-uri: https://localhost:9000
+            issuer-uri: ${AUTH_ISSUER_URI:http://host.docker.internal:9001}
 
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
+      host: ${REDIS_HOST:host.docker.internal}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:iam59!z$}
 
 # OAuth2 Resource Server配置
-  security.oauth2.resourceserver.jwt.issuer-uri: https://localhost:9000
+# 使用 jwk-set-uri 替代 issuer-uri，避免启动时强依赖 auth 服务（懒加载，首次验证 JWT 时才拉取 JWKS）
+  security.oauth2.resourceserver.jwt.jwk-set-uri: ${AUTH_JWK_SET_URI:http://host.docker.internal:9001/oauth2/jwks}
 
 management:
   server:
@@ -128,7 +47,7 @@ management:
       application: ${spring.application.name}
   zipkin:
     tracing:
-      endpoint: ${ZIPKIN_ENDPOINT:http://localhost:9411/api/v2/spans}
+      endpoint: ${ZIPKIN_ENDPOINT:http://host.docker.internal:9411/api/v2/spans}
   tracing:
     sampling:
       probability: 1.0

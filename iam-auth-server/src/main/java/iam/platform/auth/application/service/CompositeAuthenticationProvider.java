@@ -1,11 +1,5 @@
 package iam.platform.auth.application.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.stereotype.Component;
 import iam.platform.auth.application.service.pipeline.PreAuthContext;
 import iam.platform.auth.application.service.pipeline.PreAuthenticationPipeline;
 import iam.platform.auth.domain.model.entity.User;
@@ -13,20 +7,30 @@ import iam.platform.auth.domain.model.enums.AuthenticationMethod;
 import iam.platform.auth.domain.model.valueobject.AuthenticationCredentials;
 import iam.platform.auth.domain.model.valueobject.UnifiedAuthenticationToken;
 import iam.platform.auth.domain.service.AuthenticationStrategy;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
  * Composite authentication provider that dispatches to the appropriate AuthenticationStrategy based
  * on the credential type in the UnifiedAuthenticationToken.
- *
- * All AuthenticationStrategy beans are auto-discovered via Spring DI.
+ * 
+ * REFACTORED: Changed from direct List injection to ObjectProvider to eliminate circular dependencies.
+ * ObjectProvider defers bean resolution until first use, breaking the cycle at construction time.
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CompositeAuthenticationProvider implements AuthenticationProvider {
 
-    private final List<AuthenticationStrategy> strategies;
+    private final ObjectProvider<List<AuthenticationStrategy>> strategiesProvider;
     private final PreAuthenticationPipeline preAuthenticationPipeline;
 
     @Override
@@ -47,6 +51,7 @@ public class CompositeAuthenticationProvider implements AuthenticationProvider {
 
         try {
             // Find matching strategy
+            List<AuthenticationStrategy> strategies = strategiesProvider.getIfAvailable(List::of);
             AuthenticationStrategy matchingStrategy =
                     strategies.stream().filter(s -> s.supports(credentials)).findFirst()
                             .orElseThrow(() -> new BadCredentialsException(

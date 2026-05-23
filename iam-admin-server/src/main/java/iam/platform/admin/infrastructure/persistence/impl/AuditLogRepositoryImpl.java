@@ -137,6 +137,9 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
         po.setResult(domain.getResult());
         po.setErrorMessage(domain.getErrorMessage());
         po.setTraceId(domain.getTraceId());
+        po.setSpanId(domain.getSpanId());
+        po.setParentSpanId(domain.getParentSpanId());
+        po.setEncryptedFields(domain.getEncryptedFields());
         po.setCreatedAt(domain.getCreatedAt());
         return po;
     }
@@ -150,6 +153,8 @@ public class AuditLogRepositoryImpl implements AuditLogRepository {
                 .ipAddress(po.getIpAddress()).userAgent(po.getUserAgent())
                 .requestUri(po.getRequestUri()).requestParams(po.getRequestParams())
                 .result(po.getResult()).errorMessage(po.getErrorMessage()).traceId(po.getTraceId())
+                .spanId(po.getSpanId()).parentSpanId(po.getParentSpanId())
+                .encryptedFields(po.getEncryptedFields())
                 .createdAt(po.getCreatedAt()).build();
     }
 }

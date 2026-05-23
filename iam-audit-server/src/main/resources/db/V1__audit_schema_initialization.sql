@@ -24,6 +24,8 @@
 
 CREATE TABLE IF NOT EXISTS t_audit_log (
     id                  BIGSERIAL PRIMARY KEY,
+    event_id            VARCHAR(36) NOT NULL UNIQUE,
+    source_service      VARCHAR(50) NOT NULL,
     tenant_id           BIGINT,  -- No FK constraint: may reference external tenant table
     user_id             BIGINT,  -- Operator user ID (renamed from person_id)
     username            VARCHAR(100),
@@ -56,6 +58,8 @@ CREATE INDEX idx_audit_created_at ON t_audit_log(created_at);
 CREATE INDEX idx_audit_tenant_category_time ON t_audit_log(tenant_id, event_category, created_at);
 CREATE INDEX idx_audit_failure ON t_audit_log(result) WHERE result = 'FAILURE';
 CREATE INDEX idx_audit_trace_id ON t_audit_log(trace_id);
+CREATE INDEX idx_audit_event_id ON t_audit_log(event_id);
+CREATE INDEX idx_audit_source_service ON t_audit_log(source_service);
 
 COMMENT ON TABLE t_audit_log IS 'Audit log table - records all critical operations';
 COMMENT ON COLUMN t_audit_log.tenant_id IS 'Tenant ID that owns this audit record (null for system-level operations)';
